@@ -1,0 +1,430 @@
+---
+title: Git Hooks Setup
+description: Configure automatic work snapshots with post-commit and post-checkout git hooks for seamless context tracking.
+---
+
+DevDaily can automatically capture work snapshots using git hooks, ensuring you never lose context when switching branches or making commits.
+
+## Overview
+
+Git hooks allow DevDaily to silently record your work state at key moments:
+
+- **post-commit**: Captures a snapshot after every commit
+- **post-checkout**: Captures a snapshot when switching branches
+
+These snapshots power context recovery, work history search, and cross-project summaries.
+
+<Note>
+Git hooks are **opt-in** and respect existing hooks by appending DevDaily calls instead of overwriting.
+</Note>
+
+## Installation
+
+### Interactive Setup
+
+The easiest way to install git hooks is via the interactive setup:
+
+```bash
+devdaily init --git-hooks
+```
+
+This will:
+1. Check if you're in a git repository
+2. Detect existing hooks in `.git/hooks/` or your custom `core.hooksPath`
+3. Install or append DevDaily hooks
+4. Set `journal.gitHooks: true` in your config
+
+### Manual Installation
+
+You can also manually create hook files:
+
+<CodeGroup>
+
+```bash .git/hooks/post-commit
+#!/bin/sh
+# DevDaily auto-snapshot — captures work state after each commit
+# Installed by: devdaily init --git-hooks
+# Remove this file to disable post-commit snapshots
+
+# Only run if devdaily is installed
+if ! command -v devdaily >/dev/null 2>&1; then
+  exit 0
+fi
+
+# Run snapshot in background so it doesn't slow down commits
+(devdaily snapshot --light --tag auto:post-commit 2>/dev/null &)
+
+exit 0
+```
+
+```bash .git/hooks/post-checkout
+#!/bin/sh
+# DevDaily auto-snapshot — captures work state when switching branches
+# Installed by: devdaily init --git-hooks
+# Remove this file to disable post-checkout snapshots
+#
+# Arguments from git:
+#   $1 = previous HEAD ref
+#   $2 = new HEAD ref
+#   $3 = 1 if branch checkout, 0 if file checkout
+
+PREV_REF="$1"
+NEW_REF="$2"
+IS_BRANCH_CHECKOUT="$3"
+
+# Only run on branch checkouts (not file checkouts)
+if [ "$IS_BRANCH_CHECKOUT" != "1" ]; then
+  exit 0
+fi
+
+# Skip if refs are the same (no actual branch change)
+if [ "$PREV_REF" = "$NEW_REF" ]; then
+  exit 0
+fi
+
+# Only run if devdaily is installed
+if ! command -v devdaily >/dev/null 2>&1; then
+  exit 0
+fi
+
+# Run snapshot in background so it doesn't slow down checkout
+(devdaily snapshot --light --tag auto:post-checkout --note "Switched branch" 2>/dev/null &)
+
+exit 0
+```
+
+</CodeGroup>
+
+Make them executable:
+
+```bash
+chmod +x .git/hooks/post-commit
+chmod +x .git/hooks/post-checkout
+```
+
+## Configuration
+
+Control git hooks behavior in your `.devdaily.json`:
+
+```json .devdaily.json
+{
+  "journal": {
+    "autoSnapshot": true,
+    "gitHooks": true,
+    "hooks": {
+      "postCommit": true,
+      "postCheckout": true
+    },
+    "quiet": true
+  }
+}
+```
+
+<ParamField path="journal.autoSnapshot" type="boolean" default="true">
+  Master switch for all automatic snapshots (including hooks)
+</ParamField>
+
+<ParamField path="journal.gitHooks" type="boolean" default="false">
+  Enable git hooks for automatic snapshots. Set to `true` after running `devdaily init --git-hooks`.
+</ParamField>
+
+<ParamField path="journal.hooks.postCommit" type="boolean" default="true">
+  Capture snapshot after each commit
+</ParamField>
+
+<ParamField path="journal.hooks.postCheckout" type="boolean" default="true">
+  Capture snapshot when switching branches
+</ParamField>
+
+<ParamField path="journal.quiet" type="boolean" default="true">
+  Suppress snapshot messages (recommended for hooks to avoid noise)
+</ParamField>
+
+## How It Works
+
+### Post-Commit Hook
+
+After every `git commit`, DevDaily captures:
+
+- Current branch and commit hash
+- Commit message and author
+- Files changed and diff stats
+- Timestamp and tags (`auto:post-commit`)
+
+The snapshot runs in the **background** using a subshell, so it doesn't slow down your commit:
+
+```bash
+(devdaily snapshot --light --tag auto:post-commit 2>/dev/null &)
+```
+
+### Post-Checkout Hook
+
+When you switch branches (`git checkout` or `git switch`), DevDaily captures:
+
+- Previous and new branch names
+- Current working state
+- Uncommitted changes
+- Timestamp and note ("Switched branch")
+
+<Note>
+The post-checkout hook only runs for **branch checkouts**, not file checkouts (like `git checkout -- file.txt`).
+</Note>
+
+## Existing Hooks
+
+If you already have git hooks, DevDaily will **append** its calls instead of overwriting:
+
+### Before Installation
+
+```bash .git/hooks/post-commit
+#!/bin/sh
+# Your existing post-commit hook
+echo "Running custom post-commit logic..."
+./scripts/my-custom-script.sh
+```
+
+### After Installation
+
+```bash .git/hooks/post-commit
+#!/bin/sh
+# Your existing post-commit hook
+echo "Running custom post-commit logic..."
+./scripts/my-custom-script.sh
+
+# DevDaily auto-snapshot
+if command -v devdaily >/dev/null 2>&1; then
+  (devdaily snapshot --light --tag auto:post-commit 2>/dev/null &)
+fi
+```
+
+This ensures compatibility with tools like Husky, pre-commit, and custom scripts.
+
+## Uninstalling Hooks
+
+To remove DevDaily git hooks:
+
+```bash
+devdaily init --remove-hooks
+```
+
+This will:
+- Remove standalone DevDaily hooks completely
+- Remove appended DevDaily sections from mixed hooks
+- Leave other hook logic intact
+- Set `journal.gitHooks: false` in config
+
+### Manual Removal
+
+If hooks were fully managed by DevDaily:
+
+```bash
+rm .git/hooks/post-commit
+rm .git/hooks/post-checkout
+```
+
+If hooks were appended to existing files, manually edit and remove the section between:
+
+```bash
+# DevDaily auto-snapshot
+...
+fi
+```
+
+## Custom Hooks Path
+
+If you use a custom git hooks directory (via `core.hooksPath`):
+
+```bash
+git config core.hooksPath .githooks
+```
+
+DevDaily will automatically detect and use that path:
+
+```bash
+devdaily init --git-hooks
+# Installs to .githooks/ instead of .git/hooks/
+```
+
+## Performance
+
+Git hooks use **light snapshots** (`--light` flag) which:
+
+- Skip PR and ticket fetching (fast, local-only)
+- Run in the background (non-blocking)
+- Capture only essential data (commits, branches, files)
+- Complete in ~50-200ms on average repositories
+
+You won't notice any slowdown in `git commit` or `git checkout`.
+
+## Snapshot Storage
+
+Snapshots are stored in your local journal:
+
+```
+~/.config/devdaily/journal/
+├── 2026-03/
+│   ├── snapshot-2026-03-03T10-15-30.json
+│   ├── snapshot-2026-03-03T14-22-45.json
+│   └── ...
+└── index.json
+```
+
+Each snapshot is a small JSON file (~2-10 KB) containing:
+
+```json
+{
+  "timestamp": "2026-03-03T10:15:30.123Z",
+  "projectId": "my-project",
+  "repoPath": "/Users/you/code/my-project",
+  "branch": "feature/auth-refactor",
+  "commits": [...],
+  "tags": ["auto:post-commit"],
+  "diffStats": { ... }
+}
+```
+
+## Use Cases
+
+### Context Recovery
+
+When you return to a project after days or weeks:
+
+```bash
+devdaily context
+```
+
+DevDaily analyzes your journal snapshots (including hook-captured data) to tell you:
+- What branch you were on
+- What you were working on
+- Uncommitted changes
+- Related tickets
+
+### Work History Search
+
+Find when you worked on specific features:
+
+```bash
+devdaily recall "auth"
+devdaily recall --file src/auth.ts
+devdaily recall --from 2026-01-01 --to 2026-01-31
+```
+
+### Cross-Project Summaries
+
+Aggregate work across multiple repositories:
+
+```bash
+devdaily week --all-projects
+```
+
+This pulls from your journal, which includes snapshots from all projects where hooks are installed.
+
+## Disabling Auto-Snapshots
+
+If you want to keep hooks installed but temporarily disable snapshots:
+
+```json .devdaily.json
+{
+  "journal": {
+    "autoSnapshot": false
+  }
+}
+```
+
+Or per-repository:
+
+```bash
+export DEVD_QUIET=1  # Suppresses all snapshot side-effects
+```
+
+## Troubleshooting
+
+### Hooks Not Running
+
+1. Check if hooks are executable:
+   ```bash
+   ls -la .git/hooks/post-commit
+   # Should show: -rwxr-xr-x
+   ```
+
+2. Check if DevDaily is in PATH:
+   ```bash
+   which devdaily
+   ```
+
+3. Test manually:
+   ```bash
+   .git/hooks/post-commit
+   ```
+
+### Hooks Slow Down Commits
+
+This shouldn't happen because snapshots run in the background. If you experience slowdown:
+
+1. Check that hooks use the background syntax:
+   ```bash
+   (devdaily snapshot ... &)
+   ```
+
+2. Ensure `journal.quiet: true` to suppress output
+
+3. Check for other hooks that might be slow
+
+### Snapshots Not Appearing
+
+Check journal directory:
+
+```bash
+ls -lh ~/.config/devdaily/journal/
+devdaily snapshot --list
+```
+
+If empty, check config:
+
+```bash
+devdaily config | grep autoSnapshot
+# Should show: true
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Start with manual snapshots">
+    Use `devdaily snapshot` manually for a few days to understand what's captured.
+  </Step>
+  
+  <Step title="Enable side-effect snapshots">
+    Let `standup`, `pr`, and `week` commands capture automatic snapshots.
+  </Step>
+  
+  <Step title="Install git hooks">
+    Once comfortable, run `devdaily init --git-hooks` for complete coverage.
+  </Step>
+  
+  <Step title="Review periodically">
+    Check your journal with `devdaily snapshot --stats` to see growth and prune old entries.
+  </Step>
+</Steps>
+
+## Security & Privacy
+
+<Warning>
+All snapshots are **local-only**. DevDaily never sends journal data to any server.
+</Warning>
+
+- Snapshots contain commit messages, file names, and diff stats (no file contents)
+- Stored in `~/.config/devdaily/journal/` with user-only permissions
+- No network calls during snapshot capture
+- Safe to use in private/proprietary repositories
+
+## Related Configuration
+
+<CardGroup cols={2}>
+  <Card title="Configuration Overview" icon="gear" href="/configuration/overview">
+    Learn about all configuration options
+  </Card>
+  
+  <Card title="Project Management" icon="ticket" href="/configuration/project-management">
+    Integrate ticket data into snapshots
+  </Card>
+</CardGroup>

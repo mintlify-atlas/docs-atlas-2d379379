@@ -1,0 +1,212 @@
+---
+title: 'Auto-Snapshots'
+description: 'How automatic snapshots capture your work state in the background'
+---
+
+## Overview
+
+Auto-snapshots are silent, background snapshots that capture your work state automatically when you run certain DevDaily commands or git operations. They run without blocking your workflow and never crash your commands.
+
+## How Auto-Snapshots Work
+
+The auto-snapshot mechanism is a **fire-and-forget** system that:
+
+- Runs in the background without blocking the main command
+- Never throws or crashes the parent command
+- Respects the `journal.autoSnapshot` config flag
+- Takes a "light" snapshot (no PRs/tickets) for speed
+- Logs quietly (or not at all) depending on `journal.quiet`
+
+## When Snapshots Trigger
+
+Auto-snapshots are triggered by the following sources:
+
+<CardGroup cols={2}>
+  <Card title="standup" icon="microphone">
+    When you run `devdaily standup`
+  </Card>
+  <Card title="pr" icon="code-pull-request">
+    When you run `devdaily pr`
+  </Card>
+  <Card title="week" icon="calendar-week">
+    When you run `devdaily week`
+  </Card>
+  <Card title="context" icon="list">
+    When you run `devdaily context`
+  </Card>
+  <Card title="post-commit" icon="code-commit">
+    After each git commit (if git hooks installed)
+  </Card>
+  <Card title="post-checkout" icon="code-branch">
+    When switching branches (if git hooks installed)
+  </Card>
+</CardGroup>
+
+## What's Stored
+
+Each auto-snapshot captures:
+
+- **Current branch** and branch status
+- **Today's commits** (commits made on the snapshot date)
+- **Recent commits** (last 7 days for context)
+- **Uncommitted changes** (modified files)
+- **Diff statistics** (files changed, insertions, deletions)
+- **Auto-generated tags** based on the trigger source
+
+Auto-snapshots **skip** the following for speed:
+- Pull requests (not fetched)
+- Tickets/issues (not fetched)
+- Remote branch information
+
+<Note>
+Light snapshots are faster than full snapshots because they don't make network calls to GitHub, Jira, or Linear.
+</Note>
+
+## Git Hook Integration
+
+You can install git hooks to automatically snapshot your work state after commits and branch switches.
+
+### Installing Git Hooks
+
+```bash
+devdaily init --git-hooks
+```
+
+This installs:
+- **post-commit hook**: Captures work state after each commit
+- **post-checkout hook**: Captures work state when switching branches
+
+### How Hooks Work
+
+The hooks run snapshots in the background so they don't slow down your git operations:
+
+```bash
+# post-commit hook runs:
+devdaily snapshot --light --tag auto:post-commit
+
+# post-checkout hook runs:
+devdaily snapshot --light --tag auto:post-checkout --note "Switched branch"
+```
+
+Both commands run in the background (`&`) and suppress output (`2>/dev/null`) to avoid interfering with your workflow.
+
+### Existing Hooks
+
+If you already have git hooks installed, DevDaily will **append** its snapshot calls instead of overwriting them. The hooks include a `# DevDaily auto-snapshot` marker for safe identification.
+
+### Removing Hooks
+
+To remove DevDaily git hooks:
+
+```bash
+devdaily init --remove-hooks
+```
+
+This removes only the DevDaily portions of your hooks, leaving any other custom hooks intact.
+
+## Configuration
+
+### Enable/Disable Auto-Snapshots
+
+Control auto-snapshots in your config file (`~/.config/devdaily/config.json`):
+
+```json
+{
+  "journal": {
+    "autoSnapshot": true,    // Enable auto-snapshots
+    "quiet": true            // Hide snapshot confirmation messages
+  }
+}
+```
+
+### Force a Snapshot
+
+You can force a snapshot even if `autoSnapshot` is disabled:
+
+```typescript
+await sideEffectSnapshot({ source: 'standup', force: true });
+```
+
+### Verbose Mode
+
+Show snapshot confirmations even when `quiet` mode is enabled:
+
+```typescript
+await sideEffectSnapshot({ source: 'standup', verbose: true });
+```
+
+## Implementation Details
+
+From `src/core/auto-snapshot.ts:71`:
+
+```typescript
+export async function sideEffectSnapshot(
+  options: SideEffectSnapshotOptions
+): Promise<SideEffectResult> {
+  try {
+    const config = getConfig();
+    const journalConfig = config.journal ?? { autoSnapshot: true, quiet: true };
+
+    // Check if auto-snapshot is enabled (unless forced)
+    if (!options.force && !journalConfig.autoSnapshot) {
+      return { taken: false, skipReason: 'autoSnapshot disabled in config' };
+    }
+
+    // Check if we're in a git repo
+    const git = new GitAnalyzer();
+    if (!(await git.isRepository())) {
+      return { taken: false, skipReason: 'not a git repository' };
+    }
+
+    // Build snapshot options — always use light mode for speed
+    const snapshotOpts: SnapshotOptions = {
+      skipPRs: true,
+      skipTickets: true,
+      includeBranches: false,
+      includeUncommitted: true,
+      tags: [...(options.tags ?? []), `auto:${options.source}`],
+    };
+
+    const builder = new SnapshotBuilder(undefined, options.debug ?? false);
+    const result = await builder.takeLightSnapshot(snapshotOpts);
+
+    // Save to journal
+    const journal = new WorkJournal();
+    journal.saveSnapshot(result.snapshot);
+
+    return { taken: true, result };
+  } catch {
+    // Never crash the parent command
+    return { taken: false, skipReason: 'snapshot failed (non-fatal)' };
+  }
+}
+```
+
+<Info>
+The `try-catch` wrapper ensures that even if the snapshot fails, your command continues running normally.
+</Info>
+
+## Tags
+
+Each auto-snapshot is tagged with `auto:{source}` where source is the triggering command. This makes it easy to filter snapshots by how they were created:
+
+- `auto:standup`
+- `auto:pr`
+- `auto:week`
+- `auto:post-commit`
+- `auto:post-checkout`
+
+You can search for these tags using the journal search functionality.
+
+## Fire-and-Forget Mode
+
+For absolute minimal latency, use the fire-and-forget variant:
+
+```typescript
+import { fireAndForgetSnapshot } from '../core/auto-snapshot.js';
+
+// Doesn't even await — snapshot runs completely in background
+fireAndForgetSnapshot({ source: 'standup' });
+```
+
+This is useful when you don't want **any** latency added to your command, even asynchronously.

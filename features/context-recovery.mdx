@@ -1,0 +1,460 @@
+---
+title: Context Recovery
+description: Fight context switching amnesia by recovering what you were working on from your journal history
+---
+
+The context command helps you recover your work context after time away, context switching, or returning to a project. It visualizes your recent activity from saved journal snapshots.
+
+## Quick Start
+
+Recover your work context from the last 7 days:
+
+```bash
+devdaily context
+```
+
+Get an AI-powered "where did I leave off?" summary:
+
+```bash
+devdaily context --ai
+```
+
+## How It Works
+
+<Steps>
+  <Step title="Retrieve Snapshots">
+    Pulls saved journal snapshots from the specified date range.
+  </Step>
+  
+  <Step title="Analyze Activity">
+    Shows current branch, active branches with uncommitted work, and recent activity timeline.
+  </Step>
+  
+  <Step title="Display Context">
+    Renders PRs, tickets, work areas, and progression across days.
+  </Step>
+  
+  <Step title="AI Summary (Optional)">
+    Generates a concise briefing of what you were working on and suggested next steps.
+  </Step>
+</Steps>
+
+<Note>
+  Context recovery requires journal snapshots. If you haven't taken snapshots yet, the command will create one for you automatically.
+</Note>
+
+## Command Options
+
+### Time Range
+
+| Option | Description | Default |
+|--------|-------------|----------|
+| `-d, --days <number>` | Number of days to look back | `7` |
+| `--date <date>` | Show context for specific date (YYYY-MM-DD) | - |
+| `--from <date>` | Start date for range (YYYY-MM-DD) | - |
+| `--to <date>` | End date for range (YYYY-MM-DD) | - |
+
+<Tabs>
+  <Tab title="Last 7 Days">
+    ```bash
+    # Default: last week
+    devdaily context
+    ```
+  </Tab>
+  
+  <Tab title="Last 14 Days">
+    ```bash
+    # Look back 2 weeks
+    devdaily context --days 14
+    ```
+  </Tab>
+  
+  <Tab title="Specific Date">
+    ```bash
+    # What was I doing on Jan 15?
+    devdaily context --date 2024-01-15
+    ```
+  </Tab>
+  
+  <Tab title="Date Range">
+    ```bash
+    # Custom range
+    devdaily context --from 2024-01-10 --to 2024-01-20
+    ```
+  </Tab>
+</Tabs>
+
+### Project Filtering
+
+| Option | Description |
+|--------|-------------|
+| `-p, --project <id>` | Filter by project identifier |
+| `--all-projects` | Show context across all tracked projects |
+
+```bash
+# Single project
+devdaily context --project my-api
+
+# All projects
+devdaily context --all-projects
+```
+
+### Display Options
+
+| Option | Description |
+|--------|-------------|
+| `--ai` | Generate AI-powered "where did I leave off?" summary |
+| `--branches` | Show detailed active branch status |
+| `--raw` | Output raw context data (no formatting) |
+| `--no-copy` | Don't copy AI summary to clipboard |
+| `--debug` | Show debug output |
+
+```bash
+# AI summary of recent work
+devdaily context --ai
+
+# Detailed branch information
+devdaily context --branches
+
+# Raw data for automation
+devdaily context --raw
+```
+
+## Output Components
+
+### Project Header
+
+```
+  ━━━ 📂 my-api ━━━
+  /Users/dev/projects/my-api
+  3 active days · 18 commits
+```
+
+Shows project name, path, active days, and total commits.
+
+### Current Branch
+
+```
+  Current branch: feature/oauth2-integration
+```
+
+Displays your current working branch.
+
+### Active Branches
+
+Shows branches with work-in-progress:
+
+```
+  Active branches (3):
+    ▸ feature/oauth2-integration ← you are here ↑5 ahead
+      Last: Implement OAuth2 token refresh flow
+      Modified: src/auth.ts, src/api/oauth.ts +3 more
+    
+      feature/dashboard-redesign ↑12 ahead ● uncommitted changes
+      Last: Update dashboard layout
+      Modified: src/components/Dashboard.tsx
+    
+      fix/login-redirect
+      Last: Fix redirect after successful login
+```
+
+<Accordion title="Branch Status Indicators">
+  - **▸** - Current branch marker
+  - **← you are here** - You're currently on this branch
+  - **↑N ahead** - Branch is N commits ahead of base
+  - **● uncommitted changes** - Branch has uncommitted work
+</Accordion>
+
+### Activity Timeline
+
+Chronological view of recent work:
+
+```
+  Activity timeline:
+    │ 2024-01-18 (today)  🌿 feature/oauth2  📝 5 · 2 PRs · +234/-89
+    │   a3f2c91 Implement token refresh endpoint
+    │   b7e1d42 Add OAuth2 configuration
+    │   ... +3 more commits
+    │
+    │ 2024-01-17  🌿 feature/oauth2  📝 8 · +456/-123
+    │   c9d4e21 Set up OAuth2 providers
+    │   d2f8a33 Update auth middleware
+    │   e5b3c44 Add OAuth2 database schema
+    │   ... +5 more commits
+    │   📌 Started OAuth2 integration work
+    ╵
+```
+
+### Pull Requests
+
+```
+  Pull Requests:
+    ○ #45 Add OAuth2 authentication support (open)
+    ● #43 Refactor error handling (merged)
+    ✕ #41 Update API documentation (closed)
+```
+
+<Accordion title="PR State Indicators">
+  - **○** - Open PR (green)
+  - **●** - Merged PR (accent color)
+  - **✕** - Closed PR (gray)
+</Accordion>
+
+### Tickets
+
+```
+  Tickets:
+    PROJ-123: Implement OAuth2 authentication [in progress]
+    PROJ-124: Fix login redirect bug [done]
+```
+
+### Work Areas
+
+Bar chart showing time distribution:
+
+```
+  Work areas:
+    backend        ████████████████░░░░ 78%
+    tests          ████░░░░░░░░░░░░░░░░ 18%
+    docs           ░░░░░░░░░░░░░░░░░░░░  4%
+```
+
+## AI-Powered Summary
+
+Add `--ai` to get a concise briefing:
+
+```bash
+devdaily context --ai
+```
+
+### Example AI Output
+
+```
+╭─────────────────────────────────────────────────╮
+│ 🧠 Where You Left Off                           │
+├─────────────────────────────────────────────────┤
+│                                                 │
+│ **What I was working on**                       │
+│ OAuth2 authentication integration for the API.  │
+│ Started 3 days ago, made steady progress on     │
+│ token management and provider configuration.    │
+│                                                 │
+│ **Current state**                               │
+│ - ✅ OAuth2 providers configured                 │
+│ - ✅ Token refresh endpoint implemented          │
+│ - ⏳ PR #45 in review                            │
+│ - ⏳ Tests need to be written                    │
+│                                                 │
+│ **Open threads**                                │
+│ - Branch: feature/oauth2-integration (5 ahead)  │
+│ - Uncommitted changes in src/auth.ts            │
+│ - PR feedback pending                           │
+│                                                 │
+│ **Suggested next steps**                        │
+│ 1. Address PR review feedback                   │
+│ 2. Write unit tests for token refresh           │
+│ 3. Commit uncommitted auth changes              │
+╰─────────────────────────────────────────────────╯
+```
+
+The AI analyzes:
+- Main work themes over the period
+- What's completed vs. in progress
+- Open branches and uncommitted work
+- Logical next steps based on patterns
+
+<Tip>
+  The AI summary is automatically copied to clipboard (disable with `--no-copy`).
+</Tip>
+
+## Multi-Project Context
+
+View context across all your projects:
+
+```bash
+devdaily context --all-projects --days 7
+```
+
+Shows separate sections for each project you've worked on.
+
+## First-Time Usage
+
+If you haven't taken snapshots yet:
+
+```
+  No journal entries found. Taking a live snapshot...
+  
+  ✓ Snapshot saved for my-api. Future runs will have history.
+```
+
+DevDaily automatically creates your first snapshot and then displays context.
+
+### Building Your Journal
+
+To build up context history:
+
+```bash
+# Take snapshots regularly
+devdaily snapshot
+
+# Or enable auto-snapshots in other commands
+devdaily standup  # Auto-creates snapshot
+devdaily pr       # Auto-creates snapshot
+```
+
+## Use Cases
+
+### After a Weekend
+
+```bash
+# Monday morning - what was I doing Friday?
+devdaily context --days 3 --ai
+```
+
+### After Context Switching
+
+```bash
+# Just finished working on project A, now back to B
+devdaily context --project project-b --ai
+```
+
+### After a Vacation
+
+```bash
+# Back from 2 weeks off
+devdaily context --days 14 --branches --ai
+```
+
+### Reviewing Old Work
+
+```bash
+# What was I working on in mid-January?
+devdaily context --from 2024-01-10 --to 2024-01-20
+```
+
+### Daily Standup Prep
+
+```bash
+# Quick context before standup meeting
+devdaily context --days 1 --ai
+```
+
+## Detailed Branch View
+
+Use `--branches` to see all active branches, not just those with uncommitted work:
+
+```bash
+devdaily context --branches
+```
+
+Shows:
+- All branches with recent commits
+- Last commit message per branch
+- Files modified in each branch
+- Commits ahead of base
+
+## Raw Context Mode
+
+For automation and integrations:
+
+```bash
+devdaily context --raw
+```
+
+Outputs the raw journal entries in a structured format:
+
+```
+=== 2024-01-18 ===
+Project: my-api
+Branch: feature/oauth2-integration
+Commits:
+- a3f2c91: Implement token refresh endpoint
+- b7e1d42: Add OAuth2 configuration
+...
+```
+
+## Example Workflows
+
+### Quick Morning Check
+
+```bash
+# See what I worked on yesterday
+devdaily context --days 1
+```
+
+### Deep Dive Recovery
+
+```bash
+# Full context with AI guidance
+devdaily context --days 14 --branches --ai
+```
+
+### Project-Specific Recovery
+
+```bash
+# What was happening in the API project?
+devdaily context --project my-api --ai
+```
+
+### Export for Documentation
+
+```bash
+# Get raw data for notes
+devdaily context --raw > context.txt
+```
+
+## Configuration
+
+Customize in `.devdaily.json`:
+
+```json
+{
+  "output": {
+    "copyToClipboard": true
+  }
+}
+```
+
+## Troubleshooting
+
+<Accordion title="No work context found">
+  If you see "No work context found for the specified period":
+  
+  1. Take snapshots to build your journal:
+     ```bash
+     devdaily snapshot
+     ```
+  
+  2. Look back further:
+     ```bash
+     devdaily context --days 30
+     ```
+  
+  3. View all snapshots:
+     ```bash
+     devdaily snapshot --list
+     ```
+</Accordion>
+
+<Accordion title="Context seems incomplete">
+  Journal snapshots are only as complete as the data saved:
+  
+  - Take snapshots regularly (daily or after major work)
+  - Enable auto-snapshots (enabled by default in standup, pr, week)
+  - Use `--debug` to see what data is available
+</Accordion>
+
+<Accordion title="AI summary fails">
+  Ensure GitHub Copilot CLI is installed:
+  
+  ```bash
+  gh extension install github/gh-copilot
+  ```
+</Accordion>
+
+## Related Commands
+
+- [`devdaily snapshot`](/cli/snapshot) - Take and manage work snapshots
+- [`devdaily recall`](/features/work-search) - Search your work history
+- [`devdaily week`](/features/weekly-summaries) - Generate weekly summaries
+- [`devdaily standup`](/features/standup) - Generate daily standups

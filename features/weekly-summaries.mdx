@@ -1,0 +1,475 @@
+---
+title: Weekly Summaries
+description: Generate comprehensive weekly work summaries from commits, PRs, tickets, and journal history
+---
+
+The week command creates detailed summaries of your work over a week, combining live git data with historical journal entries to provide a complete picture of your accomplishments.
+
+## Quick Start
+
+Generate a summary for the current week:
+
+```bash
+devdaily week
+```
+
+Generate last week's summary:
+
+```bash
+devdaily week --last
+```
+
+## How It Works
+
+<Steps>
+  <Step title="Determine Date Range">
+    Calculate the week boundaries (Monday to Sunday or custom range).
+  </Step>
+  
+  <Step title="Gather Live Data">
+    Analyze git commits, pull requests, and tickets from the current repository.
+  </Step>
+  
+  <Step title="Enrich with Journal">
+    Pull historical snapshots from your work journal for continuity and context.
+  </Step>
+  
+  <Step title="AI Generation">
+    Generate a comprehensive summary showing accomplishments, progress, metrics, and notable items.
+  </Step>
+  
+  <Step title="Output & Save">
+    Display the summary and optionally save it to your journal for future reference.
+  </Step>
+</Steps>
+
+## Command Options
+
+### Time Range Options
+
+| Option | Description |
+|--------|-------------|
+| `-l, --last` | Last week instead of current week |
+| `-s, --start <date>` | Custom start date (YYYY-MM-DD) |
+| `--from <date>` | Start date for custom range (YYYY-MM-DD) |
+| `--to <date>` | End date for custom range (YYYY-MM-DD) |
+| `-w, --weeks-ago <number>` | Number of weeks ago (e.g., 2 = two weeks back) |
+
+<Tabs>
+  <Tab title="Current Week">
+    ```bash
+    # Current week (Monday to today)
+    devdaily week
+    ```
+  </Tab>
+  
+  <Tab title="Last Week">
+    ```bash
+    # Previous week (last Monday to Sunday)
+    devdaily week --last
+    ```
+  </Tab>
+  
+  <Tab title="Custom Range">
+    ```bash
+    # Specific week
+    devdaily week --start 2024-01-15
+    
+    # Custom date range
+    devdaily week --from 2024-01-10 --to 2024-01-17
+    ```
+  </Tab>
+  
+  <Tab title="Weeks Ago">
+    ```bash
+    # Two weeks ago
+    devdaily week --weeks-ago 2
+    
+    # Three weeks ago
+    devdaily week --weeks-ago 3
+    ```
+  </Tab>
+</Tabs>
+
+### Project Options
+
+| Option | Description |
+|--------|-------------|
+| `--all-projects` | Include all tracked projects from journal |
+| `-p, --project <id>` | Filter by specific project identifier |
+
+```bash
+# Cross-project summary
+devdaily week --all-projects
+
+# Single project summary
+devdaily week --project my-api
+```
+
+<Note>
+  The `--all-projects` flag generates a cross-project summary using only journal data, perfect for reviewing work across multiple repositories.
+</Note>
+
+### Context Control
+
+| Option | Description |
+|--------|-------------|
+| `--no-tickets` | Skip fetching closed tickets/issues |
+| `--no-prs` | Skip fetching PR context |
+| `--no-journal` | Skip journal data (use only live git) |
+
+```bash
+# Skip external API calls
+devdaily week --no-tickets --no-prs
+
+# Only live git data (no historical journal)
+devdaily week --no-journal
+```
+
+### Output Options
+
+| Option | Description |
+|--------|-------------|
+| `--no-copy` | Don't copy to clipboard |
+| `--save` | Save the summary to journal as an AI summary |
+| `--json` | Output stats as JSON (no AI generation) |
+| `--raw-context` | Output only raw context block (no AI) |
+| `--debug` | Show full context and prompt sent to Copilot |
+
+```bash
+# Save to journal for future reference
+devdaily week --save
+
+# Export stats as JSON
+devdaily week --json
+
+# Debug mode
+devdaily week --debug
+```
+
+### Journal Control
+
+| Option | Description |
+|--------|-------------|
+| `--no-auto-snapshot` | Skip auto-saving a snapshot to journal |
+
+```bash
+# Don't create auto-snapshot
+devdaily week --no-auto-snapshot
+```
+
+## Single-Project Mode
+
+Default mode that analyzes the current repository with optional journal enrichment.
+
+### What Gets Analyzed
+
+**Live Git Data:**
+- Commits from the week
+- Pull requests created/updated
+- Ticket IDs from commits and branches
+- Diff statistics (insertions/deletions)
+- Work categories (frontend, backend, etc.)
+- Top changed files
+
+**Journal History (if available):**
+- Daily snapshots from the week
+- Notes and tags from each day
+- Branch activity across days
+- Historical context and continuity
+
+### Example Output
+
+```
+╭─────────────────────────────────────────────────╮
+│ 📅 Week in Review (Jan 15 - Jan 21)            │
+├─────────────────────────────────────────────────┤
+│                                                 │
+│ ## Accomplishments                              │
+│ - Implemented user authentication system        │
+│ - Fixed critical login redirect bug (PROJ-123)  │
+│ - Refactored API error handling                 │
+│                                                 │
+│ ## In Progress                                  │
+│ - PR #45: Add OAuth2 support (in review)        │
+│ - Branch: feature/dashboard-redesign            │
+│                                                 │
+│ ## Key Metrics                                  │
+│ - 23 commits across 5 days                      │
+│ - +1,234 / -567 lines                           │
+│ - 3 PRs merged, 1 in progress                   │
+│                                                 │
+│ ## Notable Items                                │
+│ - Breaking change: Updated auth API endpoints   │
+╰─────────────────────────────────────────────────╯
+
+ commits: 23  lines added: +1234  lines removed: -567
+ PRs: 3  tickets: 5  primary area: backend
+ journal days: 5
+```
+
+## Cross-Project Mode
+
+<Tip>
+  Use `--all-projects` to see work across multiple repositories.
+</Tip>
+
+Generate a summary spanning all projects tracked in your journal:
+
+```bash
+devdaily week --all-projects
+```
+
+### What Gets Analyzed
+
+- All journal snapshots from the week across all projects
+- Per-project commit counts and active days
+- Branch activity per project
+- Work category breakdown per project
+- Cross-cutting themes and patterns
+
+### Example Cross-Project Output
+
+```
+╭─────────────────────────────────────────────────╮
+│ 📅 Cross-Project Week in Review (Jan 15 - 21)  │
+├─────────────────────────────────────────────────┤
+│                                                 │
+│ ## Week Overview                                │
+│ Heavy focus on backend infrastructure across    │
+│ API and dashboard projects. Context switching   │
+│ between bugfixes and new feature work.          │
+│                                                 │
+│ ## Per-Project Highlights                       │
+│                                                 │
+│ ### my-api (3 days, 18 commits)                 │
+│ - Migrated authentication to OAuth2             │
+│ - Fixed critical production bugs                │
+│                                                 │
+│ ### dashboard (2 days, 12 commits)              │
+│ - Redesigned user settings page                 │
+│ - Added real-time notifications                 │
+│                                                 │
+│ ## Cross-Cutting Themes                         │
+│ - Auth improvements across both projects        │
+│ - Testing infrastructure week                   │
+╰─────────────────────────────────────────────────╯
+
+ projects: 2  active days: 5  total commits: 30
+ lines added: +2156  lines removed: -892
+```
+
+### Per-Project Breakdown
+
+After the summary, see detailed stats per project:
+
+```
+📂 Per-Project Breakdown
+
+  my-api                          18 commits · 3 days  +1234/-456
+    Branches: feature/oauth2, fix/login-bug, main
+    Areas: backend(75%), tests(15%), docs(10%)
+
+  dashboard                       12 commits · 2 days  +922/-436
+    Branches: feature/settings-redesign, feature/notifications
+    Areas: frontend(85%), backend(15%)
+```
+
+## Weekly Summary Structure
+
+The AI-generated summary includes:
+
+### Single-Project Structure
+
+1. **Accomplishments** - Key completed work
+2. **In Progress** - Active work and open PRs
+3. **Key Metrics** - Commits, changes, PRs merged
+4. **Notable Items** - Breaking changes, refactors, patterns
+
+### Cross-Project Structure
+
+1. **Week Overview** - High-level themes across projects
+2. **Per-Project Highlights** - Key accomplishments per project
+3. **Cross-Cutting Themes** - Patterns and shared concerns
+4. **This Week in Numbers** - Aggregate stats
+
+## Saving Summaries
+
+<Accordion title="Save to Journal">
+  ```bash
+  devdaily week --save
+  ```
+  
+  Saves the AI-generated summary to your journal for future reference and searching.
+</Accordion>
+
+<Accordion title="Auto-Snapshot">
+  By default, running `devdaily week` creates a snapshot entry. Disable with:
+  
+  ```bash
+  devdaily week --no-auto-snapshot
+  ```
+</Accordion>
+
+## Example Workflows
+
+### End-of-Week Review
+
+```bash
+# Friday afternoon - review the week
+devdaily week --save
+
+# Copy to clipboard for team update
+```
+
+### Cross-Project Status
+
+```bash
+# Monthly review across all projects
+devdaily week --all-projects --from 2024-01-01 --to 2024-01-31
+```
+
+### Custom Range Summary
+
+```bash
+# Sprint review (2-week sprint)
+devdaily week --from 2024-01-08 --to 2024-01-21
+```
+
+### Historical Analysis
+
+```bash
+# Last month's first week
+devdaily week --weeks-ago 4
+
+# Export as JSON for analysis
+devdaily week --weeks-ago 4 --json > week-data.json
+```
+
+### Quick Last Week
+
+```bash
+# Monday morning - review last week
+devdaily week --last --save
+```
+
+## Data Sources
+
+The weekly summary combines two data sources:
+
+### Live Git Data (Current Repo)
+
+✅ Most accurate for current state  
+✅ Includes latest commits and changes  
+✅ Real-time PR and ticket status  
+
+### Journal History (Saved Snapshots)
+
+✅ Historical continuity across days  
+✅ Shows work progression  
+✅ Includes notes and tags  
+✅ Cross-project visibility  
+
+<Note>
+  Journal entries are created with `devdaily snapshot` or auto-saved by other commands.
+</Note>
+
+## Configuration
+
+Customize weekly summaries in `.devdaily.json`:
+
+```json
+{
+  "git": {
+    "defaultBranch": "main"
+  },
+  "output": {
+    "showStats": true,
+    "copyToClipboard": true
+  }
+}
+```
+
+## JSON Output
+
+For automation and integrations:
+
+```bash
+devdaily week --json
+```
+
+**Single-project JSON:**
+```json
+{
+  "dateRange": { "from": "2024-01-15", "to": "2024-01-21" },
+  "commits": 23,
+  "pullRequests": 3,
+  "tickets": 5,
+  "diffStats": {
+    "filesChanged": 42,
+    "insertions": 1234,
+    "deletions": 567
+  },
+  "categories": [
+    { "name": "backend", "percentage": 75 },
+    { "name": "tests", "percentage": 15 }
+  ],
+  "branch": "main",
+  "journalEntries": 5
+}
+```
+
+**Cross-project JSON:**
+```json
+{
+  "projects": [
+    {
+      "projectId": "my-api",
+      "totalCommits": 18,
+      "activeDays": 3,
+      "branches": ["feature/oauth2", "main"],
+      "diffStats": { "insertions": 1234, "deletions": 456 }
+    }
+  ],
+  "totalCommits": 30,
+  "totalActiveDays": 5
+}
+```
+
+## Troubleshooting
+
+<Accordion title="No data found for this week">
+  If you see "No commits, PRs, or journal entries found":
+  
+  - Verify you're in a git repository
+  - Check the date range is correct
+  - Use `--debug` to see what's being analyzed
+  - Try `--all-projects` if you have journal entries
+</Accordion>
+
+<Accordion title="Cross-project mode shows nothing">
+  You need journal snapshots for cross-project summaries:
+  
+  ```bash
+  # Start taking snapshots
+  devdaily snapshot
+  
+  # View your journal
+  devdaily snapshot --list
+  ```
+</Accordion>
+
+<Accordion title="Copilot CLI not found">
+  Install GitHub Copilot CLI:
+  
+  ```bash
+  gh extension install github/gh-copilot
+  ```
+</Accordion>
+
+## Related Commands
+
+- [`devdaily standup`](/features/standup) - Daily standup generation
+- [`devdaily snapshot`](/cli/snapshot) - Take work snapshots
+- [`devdaily context`](/features/context-recovery) - Recover work context
+- [`devdaily recall`](/features/work-search) - Search work history

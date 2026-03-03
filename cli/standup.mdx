@@ -1,0 +1,161 @@
+---
+title: "devdaily standup"
+description: "Generate standup notes from your recent commits, PRs, and tickets"
+---
+
+## Description
+
+Generates AI-powered standup notes by analyzing your recent git commits, pull requests, and ticket context. The command gathers comprehensive work context and uses GitHub Copilot CLI to create a structured summary perfect for team standups.
+
+## Usage
+
+```bash
+devdaily standup [options]
+```
+
+## Options
+
+<ParamField path="-d, --days <number>" type="string" default="1">
+  Number of days to look back for commits and activity
+</ParamField>
+
+<ParamField path="-f, --format <type>" type="string" default="markdown">
+  Output format for the standup notes. Options: `markdown`, `slack`, `plain`, `json`
+</ParamField>
+
+<ParamField path="-a, --author <email>" type="string">
+  Filter commits by author email address
+</ParamField>
+
+<ParamField path="-t, --ticket <id...>" type="string[]">
+  Include specific ticket/issue IDs for additional context. Can specify multiple tickets.
+</ParamField>
+
+<ParamField path="--tone <type>" type="string" default="mixed">
+  Output tone style. Options: `engineering`, `mixed`, `business`
+</ParamField>
+
+<ParamField path="--no-tickets" type="boolean">
+  Skip fetching ticket/issue context from your PM tool
+</ParamField>
+
+<ParamField path="--no-prs" type="boolean">
+  Skip fetching pull request context
+</ParamField>
+
+<ParamField path="--no-copy" type="boolean">
+  Do not automatically copy the output to clipboard
+</ParamField>
+
+<ParamField path="--debug" type="boolean">
+  Show the full context and prompt sent to Copilot CLI for debugging
+</ParamField>
+
+<ParamField path="--preview" type="boolean">
+  Show assembled context and ask for confirmation before generating the standup
+</ParamField>
+
+<ParamField path="--context" type="boolean">
+  Show detailed work context analysis (commits, PRs, tickets, categories)
+</ParamField>
+
+<ParamField path="--raw-context" type="boolean">
+  Output only the raw context block without AI generation
+</ParamField>
+
+<ParamField path="--send" type="boolean">
+  Send the standup to configured notification channels (Slack/Discord)
+</ParamField>
+
+<ParamField path="--slack" type="boolean">
+  Send to Slack only
+</ParamField>
+
+<ParamField path="--discord" type="boolean">
+  Send to Discord only
+</ParamField>
+
+<ParamField path="--test-webhook" type="boolean">
+  Send a test message to configured Slack/Discord webhooks to verify setup
+</ParamField>
+
+<ParamField path="--no-journal" type="boolean">
+  Skip auto-saving a snapshot to the work journal
+</ParamField>
+
+## Examples
+
+### Basic standup for today
+
+```bash
+devdaily standup
+```
+
+### Last 3 days of work
+
+```bash
+devdaily standup --days 3
+```
+
+### Format for Slack
+
+```bash
+devdaily standup --format slack
+```
+
+### Send directly to Slack
+
+```bash
+devdaily standup --send --slack
+```
+
+### Include specific tickets
+
+```bash
+devdaily standup --ticket PROJ-123 --ticket PROJ-456
+```
+
+### Preview before generating
+
+```bash
+devdaily standup --preview --days 2
+```
+
+### Engineering tone, 5 days, no tickets
+
+```bash
+devdaily standup --days 5 --tone engineering --no-tickets
+```
+
+### Test webhook configuration
+
+```bash
+devdaily standup --test-webhook
+```
+
+## Output
+
+The command generates a structured standup report including:
+
+- Summary of work accomplished
+- Commits grouped by feature/area
+- Pull request status
+- Linked tickets with context
+- Work area breakdown
+- Code change statistics
+
+## Configuration
+
+The standup command respects these configuration settings:
+
+- `standup.defaultDays` - Default lookback period
+- `git.defaultBranch` - Base branch for comparisons
+- `output.format` - Default output format
+- `output.copyToClipboard` - Auto-copy behavior
+- `output.showStats` - Display statistics
+
+## Requirements
+
+- Must be run inside a git repository
+- Requires GitHub Copilot CLI (`gh extension install github/gh-copilot`)
+- Optional: PM tool integration for ticket context (Jira, Linear, GitHub Issues)

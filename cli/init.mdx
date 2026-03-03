@@ -1,0 +1,245 @@
+---
+title: "devdaily init"
+description: "Set up DevDaily with aliases, completions, config, and integrations"
+---
+
+## Description
+
+Interactive setup wizard that configures DevDaily for your environment. Sets up shell aliases, completions, configuration files, PM tool integrations, and git hooks.
+
+## Usage
+
+```bash
+devdaily init [options]
+```
+
+## Options
+
+<ParamField path="-g, --global" type="boolean">
+  Set up globally for all projects (uses `~/.devdaily.json`)
+</ParamField>
+
+<ParamField path="--alias" type="boolean">
+  Only set up shell alias (`dd`)
+</ParamField>
+
+<ParamField path="--completions" type="boolean">
+  Only set up shell completions
+</ParamField>
+
+<ParamField path="--config" type="boolean">
+  Only create config file
+</ParamField>
+
+<ParamField path="--pm" type="boolean">
+  Only set up project management integration
+</ParamField>
+
+<ParamField path="--notifications" type="boolean">
+  Only set up Slack/Discord notifications
+</ParamField>
+
+<ParamField path="--git-hooks" type="boolean">
+  Install git hooks for automatic snapshots (post-commit, post-checkout)
+</ParamField>
+
+<ParamField path="--remove-hooks" type="boolean">
+  Remove previously installed devdaily git hooks
+</ParamField>
+
+## Examples
+
+### Interactive setup
+
+```bash
+devdaily init
+```
+
+### Global setup
+
+```bash
+devdaily init --global
+```
+
+### Just shell alias
+
+```bash
+devdaily init --alias
+```
+
+### PM integration only
+
+```bash
+devdaily init --pm
+```
+
+### Notifications only
+
+```bash
+devdaily init --notifications
+```
+
+### Install git hooks
+
+```bash
+devdaily init --git-hooks
+```
+
+### Remove git hooks
+
+```bash
+devdaily init --remove-hooks
+```
+
+## Setup Features
+
+### Shell Alias
+
+Adds `dd` as a shortcut for `devdaily`:
+
+```bash
+dd standup
+dd pr
+dd week
+```
+
+Supported shells: zsh, bash, fish
+
+### Shell Completions
+
+Enables tab completion for:
+
+- Commands (standup, pr, week, etc.)
+- Options (--days, --format, etc.)
+- Subcommands
+
+### Configuration File
+
+Creates:
+
+- **Local**: `.devdaily.json` in project root
+- **Global**: `~/.devdaily.json` in home directory
+
+Stores preferences for:
+
+- Default branch
+- Output format
+- Theme colors
+- PM tool settings
+
+### PM Integration
+
+Supported tools:
+
+- **GitHub Issues** (default, uses `gh` CLI)
+- **Jira** (API token required)
+- **Linear** (API key required)
+- **Notion** (integration token required)
+
+Collects credentials and stores them securely in `.devdaily.secrets.json` (auto-added to `.gitignore`).
+
+### Notifications
+
+Configures webhooks for:
+
+- **Slack** - Incoming Webhooks
+- **Discord** - Webhook URLs
+
+Allows sending standups directly to team channels.
+
+### PR Prompt File
+
+Creates `.devdaily-pr-prompt.md` with sample guidelines:
+
+```markdown
+# PR Description Guidelines
+
+Our team prefers:
+- Focus on the "why" not the "what"
+- Include testing notes
+- Reference ticket IDs
+```
+
+Customize this file to match your team's PR standards.
+
+### Git Hooks
+
+Installs hooks to automatically take snapshots:
+
+- **post-commit** - After each commit
+- **post-checkout** - When switching branches
+
+Works safely alongside existing hooks.
+
+## Interactive Setup Flow
+
+When running `devdaily init` without options:
+
+1. **Shell Setup** - Alias and completions
+2. **Config File** - Local or global
+3. **PM Tool** - Select and configure
+4. **Default Branch** - Auto-detect or specify
+5. **PR Settings** - Diff inclusion, max lines
+6. **PR Prompt** - Create custom guidelines
+7. **Notifications** - Slack/Discord webhooks
+8. **Git Hooks** - Auto-snapshot setup
+
+## Configuration Location
+
+### Local (per-project)
+
+- Config: `.devdaily.json`
+- Secrets: `.devdaily.secrets.json`
+- Location: Repository root
+
+### Global (user-wide)
+
+- Config: `~/.devdaily.json`
+- Secrets: `~/.devdaily.secrets.json`
+- Location: Home directory
+
+## Secrets Storage
+
+Sensitive credentials are stored in `.devdaily.secrets.json`:
+
+```json
+{
+  "jira": {
+    "baseUrl": "https://company.atlassian.net",
+    "email": "you@company.com",
+    "apiToken": "..."
+  },
+  "slack": {
+    "webhookUrl": "https://hooks.slack.com/..."
+  }
+}
+```
+
+This file is automatically added to `.gitignore`.
+
+## After Setup
+
+Restart your shell or run:
+
+```bash
+# zsh/bash
+source ~/.zshrc  # or ~/.bashrc
+
+# fish
+source ~/.config/fish/config.fish
+```
+
+Then test:
+
+```bash
+dd standup
+dd pr
+dd week
+```
+
+## Requirements
+
+- Shell: zsh, bash, or fish
+- Git repository (for local setup)
+- Optional: `gh` CLI for GitHub features
+- Optional: PM tool API access

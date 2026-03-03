@@ -1,0 +1,162 @@
+---
+title: "devdaily dash"
+description: "Open interactive dashboard for DevDaily commands"
+---
+
+## Description
+
+Opens an interactive terminal dashboard with a menu-driven interface for accessing all DevDaily commands. Provides a visual, easy-to-navigate alternative to command-line flags.
+
+## Usage
+
+```bash
+devdaily dash
+```
+
+## Aliases
+
+```bash
+devdaily d
+devdaily dashboard
+```
+
+## Features
+
+The interactive dashboard provides:
+
+- **Visual menu** - Navigate commands with arrow keys
+- **Quick actions** - Common tasks with one selection
+- **Guided workflows** - Step-by-step command building
+- **Help text** - Inline descriptions and tips
+- **Keyboard shortcuts** - Fast navigation
+
+## Available Actions
+
+The dashboard typically includes:
+
+### Work Summaries
+
+- Generate standup notes
+- Create PR description
+- View weekly summary
+
+### Context Management
+
+- Recover work context
+- Search work history (recall)
+- Take a snapshot
+
+### Configuration
+
+- Set up integrations
+- Configure settings
+- Test connections
+- Run diagnostics
+
+### Journal
+
+- List recent snapshots
+- View journal stats
+- Prune old entries
+
+## Navigation
+
+### Keyboard Controls
+
+- **↑/↓** - Move selection up/down
+- **Enter** - Select option
+- **Esc/q** - Exit dashboard
+- **Tab** - Navigate between sections
+- **?** - Show help
+
+### Example Flow
+
+1. Launch dashboard: `devdaily dash`
+2. Arrow down to "Generate standup notes"
+3. Press Enter
+4. Select options (days, format, etc.)
+5. Confirm and generate
+6. View output
+7. Choose next action or exit
+
+## Benefits
+
+### Discoverability
+
+- See all available commands
+- Learn what options exist
+- Explore features visually
+
+### Ease of Use
+
+- No need to memorize flags
+- Guided configuration
+- Immediate feedback
+
+### Quick Access
+
+- Faster than typing long commands
+- One-key shortcuts for common tasks
+- Recent actions memory
+
+## Examples
+
+### Launch dashboard
+
+```bash
+devdaily dash
+```
+
+### Launch with alias
+
+```bash
+dd d
+```
+
+## Output
+
+The dashboard is a full-screen terminal UI with:
+
+- Header with DevDaily branding
+- Main menu with categorized options
+- Footer with keyboard shortcuts
+- Status bar with current context
+
+## Requirements
+
+- Terminal with color support
+- Minimum terminal size: 80x24
+- Interactive TTY (not for scripts/pipes)
+
+## Limitations
+
+- Cannot be used in non-interactive environments (CI/CD, scripts)
+- Requires terminal with cursor control
+- Not all command options may be exposed
+
+## Alternative
+
+For scripting and automation, use direct commands:
+
+```bash
+devdaily standup --days 3
+devdaily pr --create
+devdaily week --last
+```
+
+## Customization
+
+The dashboard respects your config settings:
+
+- Theme colors (`theme.primary`)
+- Compact mode (`compactMode`)
+- Default values for commands
+
+## Exiting
+
+To exit the dashboard:
+
+- Press `Esc`
+- Press `q`
+- Select "Exit" from menu
+- Press `Ctrl+C`

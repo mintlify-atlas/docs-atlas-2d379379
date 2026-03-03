@@ -1,0 +1,387 @@
+---
+title: 'Privacy & Security'
+description: 'Local-only storage, no telemetry, and how DevDaily uses AI'
+---
+
+## Overview
+
+DevDaily is designed with privacy as a core principle. Your work history, code context, and development activity stay on your machine unless you explicitly choose to share it with AI services.
+
+## Local-Only Storage
+
+All DevDaily data is stored **locally** on your machine:
+
+```
+~/.config/devdaily/
+  ├── config.json          # Your configuration
+  ├── journal/             # Work snapshots (local only)
+  │   ├── index.json       # Project registry
+  │   └── YYYY-MM-DD/      # Daily snapshots
+  └── cache/               # Temporary cache (if any)
+```
+
+<Info>
+Nothing from your `journal/` directory is ever sent to external servers unless you explicitly run a command that uses AI.
+</Info>
+
+### What's Stored Locally
+
+- **Work snapshots**: Daily captures of commits, branches, file changes
+- **Project metadata**: Repo paths, remote URLs, snapshot counts
+- **User notes**: Any notes you attach to snapshots
+- **AI summaries**: Generated summaries (stored locally after generation)
+- **Configuration**: Your DevDaily settings
+
+### What's NOT Stored
+
+- Actual source code (only commit messages and file paths)
+- Credentials or API keys (except what you configure)
+- Personal information beyond git author names
+- Network requests or usage telemetry
+
+## No Telemetry
+
+DevDaily **does not** collect or send:
+
+- Usage statistics
+- Error reports
+- Command history
+- Project information
+- Git data
+- Any telemetry whatsoever
+
+<Check>
+No phone-home. No analytics. No tracking.
+</Check>
+
+From the source code, there are **zero** network calls to external telemetry services. The only external requests are:
+
+1. **Git hosting APIs** (GitHub, GitLab) — when explicitly fetching PR data
+2. **Project management APIs** (Jira, Linear) — when explicitly fetching ticket data  
+3. **AI services** (GitHub Copilot) — when explicitly generating AI content
+
+All of these require your explicit configuration and are triggered only by specific commands.
+
+## AI Integration
+
+DevDaily uses GitHub Copilot CLI for AI-powered features like PR descriptions, standups, and weekly summaries.
+
+### When AI is Used
+
+<CardGroup cols={2}>
+  <Card title="devdaily standup" icon="microphone">
+    Sends commit messages and ticket context to Copilot to generate a standup update
+  </Card>
+  <Card title="devdaily week" icon="calendar-week">
+    Sends week's commit history and stats to Copilot for a summary
+  </Card>
+  <Card title="devdaily pr" icon="code-pull-request">
+    Sends commit messages, file paths, and diff to Copilot for PR description
+  </Card>
+  <Card title="devdaily context --summary" icon="sparkles">
+    Sends git context to Copilot for an AI summary
+  </Card>
+</CardGroup>
+
+### What's Sent to AI
+
+When you run an AI-powered command, DevDaily sends:
+
+- **Commit messages** (not full diffs unless for PR generation)
+- **Branch names**
+- **File paths** (not file contents)
+- **Ticket metadata** (ID, title, description)
+- **PR titles** (if fetching PR context)
+- **Git diff** (only for `devdaily pr` command)
+
+<Warning>
+Never sent: Your full source code, credentials, API keys, or personal data beyond git author names.
+</Warning>
+
+### Copilot Privacy
+
+GitHub Copilot's privacy policy applies when using AI features. Key points:
+
+- Prompts sent to Copilot are subject to [GitHub's privacy policy](https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement)
+- Copilot may retain prompts temporarily for abuse detection
+- GitHub states they do not use Copilot CLI prompts to train models (as of 2024)
+
+From `src/core/copilot.ts:67`:
+
+```typescript
+private async executeNewCopilot(prompt: string): Promise<string> {
+  try {
+    const { stdout } = await execa(
+      'copilot',
+      ['-p', prompt, '--silent', '--no-ask-user', '--model', 'claude-sonnet-4'],
+      {
+        timeout: 120000,
+        env: {
+          ...process.env,
+          NO_COLOR: '1',
+        },
+      }
+    );
+
+    return this.parseOutput(stdout);
+  } catch (error) {
+    throw new Error(`Copilot CLI error: ${error}`);
+  }
+}
+```
+
+The Copilot CLI is invoked **locally** on your machine. DevDaily does not proxy or intercept the request — it goes directly from your machine to GitHub's Copilot service.
+
+### Opt-Out of AI
+
+You can use DevDaily without AI:
+
+- **Snapshots**: Fully local, no AI
+- **Journal search**: Fully local, no AI
+- **Context recovery**: Fully local, no AI
+- **Git analysis**: Fully local, no AI
+
+Simply don't run commands that invoke Copilot (`standup`, `week`, `pr`, `context --summary`).
+
+## Debug Mode
+
+Debug mode shows exactly what's sent to AI:
+
+```bash
+DEVD_DEBUG=1 devdaily pr
+```
+
+Output:
+
+```
+┌─── DEBUG: Prompt sent to Copilot ───────────────────┐
+You are an expert developer helping create a Pull Request description.
+
+Branch: feature/new-auth
+
+Commits:
+1. feat: add JWT authentication
+2. test: add auth tests
+3. docs: update API docs
+
+Files changed:
+src/auth.ts
+src/api.ts
+tests/auth.test.ts
+
+Related tickets: PROJ-123
+...
+└─── END Prompt ──────────────────────────────────────┘
+```
+
+From `src/core/copilot.ts:99`:
+
+```typescript
+async suggest(prompt: string): Promise<string> {
+  if (this.debugMode) {
+    console.log('\n┌─── DEBUG: Prompt sent to Copilot ───────────────────┐');
+    console.log(prompt);
+    console.log('└─── END Prompt ──────────────────────────────────────┘\n');
+  }
+
+  const copilotType = await this.getCopilotType();
+  let result: string;
+  
+  if (copilotType === 'new') {
+    result = await this.executeNewCopilot(prompt);
+  } else if (copilotType === 'legacy') {
+    result = await this.executeLegacyCopilot(prompt);
+  }
+
+  if (this.debugMode) {
+    console.log('\n┌─── DEBUG: Raw Copilot response ─────────────────────┐');
+    console.log(result);
+    console.log('└─── END Response ───────────────────────────────────┘\n');
+  }
+
+  return result;
+}
+```
+
+<Tip>
+Use debug mode to verify what data is being sent before sharing sensitive work.
+</Tip>
+
+## API Keys & Credentials
+
+DevDaily requires API keys for optional integrations:
+
+### GitHub
+- **What it's for**: Fetching PR data, creating PRs
+- **Where it's stored**: Environment variable `GITHUB_TOKEN` or `gh` CLI config
+- **What we access**: Public/private repo PRs, issues (based on token scope)
+- **Not accessed**: Code contents, other users' private data
+
+### Jira
+- **What it's for**: Fetching ticket metadata
+- **Where it's stored**: `~/.config/devdaily/config.json` (local file)
+- **What we access**: Ticket ID, title, status, description
+- **Not accessed**: Comments, attachments, sensitive fields
+
+### Linear
+- **What it's for**: Fetching issue metadata  
+- **Where it's stored**: `~/.config/devdaily/config.json` (local file)
+- **What we access**: Issue ID, title, status, description
+- **Not accessed**: Comments, attachments
+
+<Warning>
+Store your config file securely. It may contain API keys.
+</Warning>
+
+## Data Retention
+
+### Local Data
+
+DevDaily retains data locally until you manually delete it:
+
+```bash
+# View journal stats
+devdaily journal stats
+
+# Prune snapshots older than 1 year
+devdaily journal prune --days 365
+
+# Delete all journal data
+rm -rf ~/.config/devdaily/journal/
+```
+
+### AI Service Data
+
+Refer to GitHub Copilot's data retention policy:
+- Prompts may be retained temporarily for abuse detection
+- Responses are not stored by GitHub (as of 2024)
+- DevDaily does not log or store prompts separately
+
+## Network Requests
+
+All network requests made by DevDaily:
+
+<AccordionGroup>
+  <Accordion title="GitHub API" icon="github">
+    **Endpoints:**
+    - `GET /repos/{owner}/{repo}/pulls`
+    - `POST /repos/{owner}/{repo}/pulls`
+    - `GET /repos/{owner}/{repo}/issues`
+    
+    **When:** Only when running `devdaily pr` or fetching ticket data
+    
+    **Data sent:** Repo name, PR branch names, auth token
+  </Accordion>
+  
+  <Accordion title="Jira API" icon="ticket">
+    **Endpoints:**
+    - `GET /rest/api/3/search` (JQL queries)
+    - `GET /rest/api/3/issue/{key}`
+    
+    **When:** Only when running commands that fetch ticket context
+    
+    **Data sent:** JQL query (ticket IDs from commits), auth credentials
+  </Accordion>
+  
+  <Accordion title="Linear API" icon="list-check">
+    **Endpoints:**
+    - GraphQL queries for issues
+    
+    **When:** Only when running commands that fetch ticket context
+    
+    **Data sent:** Issue IDs from commits, API key
+  </Accordion>
+  
+  <Accordion title="GitHub Copilot" icon="wand-magic-sparkles">
+    **Endpoints:**
+    - Handled by GitHub Copilot CLI (not DevDaily)
+    
+    **When:** Only when running AI commands (`standup`, `week`, `pr`, etc.)
+    
+    **Data sent:** Prompts containing commit messages, file paths, ticket metadata
+  </Accordion>
+</AccordionGroup>
+
+## Source Code Transparency
+
+DevDaily is open source. You can audit:
+
+- What data is stored: `src/core/work-journal.ts:1`
+- What's sent to AI: `src/core/copilot.ts:1`  
+- Network requests: Search for `fetch`, `axios`, `execa` in the source
+- Configuration: `src/config/index.ts`
+
+No obfuscation. No hidden telemetry. What you see is what runs.
+
+## Security Best Practices
+
+<Steps>
+  <Step title="Protect your config file">
+    Ensure `~/.config/devdaily/config.json` has restrictive permissions:
+    
+    ```bash
+    chmod 600 ~/.config/devdaily/config.json
+    ```
+  </Step>
+  
+  <Step title="Use scoped tokens">
+    GitHub: Use tokens with minimal scope (e.g., `repo` for private repos, `public_repo` for public)
+    
+    Jira: Use API tokens, not passwords
+    
+    Linear: Use team-specific API keys
+  </Step>
+  
+  <Step title="Review AI prompts in debug mode">
+    Before running AI commands on sensitive projects:
+    
+    ```bash
+    DEVD_DEBUG=1 devdaily pr
+    ```
+  </Step>
+  
+  <Step title="Prune old data">
+    Regularly remove old snapshots you no longer need:
+    
+    ```bash
+    devdaily journal prune --days 180
+    ```
+  </Step>
+  
+  <Step title="Don't commit config files">
+    Never commit `~/.config/devdaily/config.json` to git
+  </Step>
+</Steps>
+
+## GDPR & Compliance
+
+### Data Controller
+
+You are the data controller for all DevDaily-stored data. DevDaily is a local tool that stores data on your machine — there is no DevDaily service or company acting as a data processor.
+
+### Right to Erasure
+
+Delete all your data at any time:
+
+```bash
+rm -rf ~/.config/devdaily/
+```
+
+### Data Portability
+
+All data is stored in **plain JSON** files. You can:
+- Read them with any text editor
+- Parse them with any JSON library  
+- Export them to other tools
+- Back them up to your own storage
+
+No proprietary formats. No lock-in.
+
+## Questions?
+
+If you have privacy or security concerns:
+
+1. **Review the source code**: All network calls and storage logic is visible
+2. **Run in debug mode**: See exactly what data is sent to AI
+3. **Open an issue**: [GitHub Issues](https://github.com/user/devdaily/issues)
+4. **Use offline mode**: Don't configure AI — DevDaily works fully offline for snapshots and journal features

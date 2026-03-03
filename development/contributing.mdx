@@ -1,0 +1,463 @@
+---
+title: Contributing Guide
+description: How to contribute to DevDaily, including PR process and coding standards
+---
+
+## Welcome Contributors!
+
+Thank you for your interest in contributing to DevDaily! This guide will help you submit high-quality contributions.
+
+<Info>
+  New to open source? Check out [First Timers Only](https://www.firsttimersonly.com/) for guidance.
+</Info>
+
+## Getting Started
+
+### Fork and Clone
+
+<Steps>
+  <Step title="Fork the repository">
+    Visit [github.com/hempun10/devdaily](https://github.com/hempun10/devdaily) and click **Fork**
+  </Step>
+  <Step title="Clone your fork">
+    ```bash
+    git clone https://github.com/<your-username>/devdaily.git
+    cd devdaily
+    ```
+  </Step>
+  <Step title="Install dependencies">
+    ```bash
+    npm install
+    ```
+  </Step>
+  <Step title="Verify setup">
+    ```bash
+    npm run typecheck
+    npm run lint
+    npm test
+    npm run build
+    ```
+  </Step>
+</Steps>
+
+<Check>
+  If all commands complete successfully, you're ready to contribute!
+</Check>
+
+## Development Workflow
+
+### 1. Create a Branch
+
+Create a feature branch from `main`:
+
+```bash
+git checkout -b feat/your-feature-name
+```
+
+<Tip>
+  Use descriptive branch names that indicate the type of change:
+  - `feat/add-notion-integration`
+  - `fix/clipboard-copy-error`
+  - `docs/update-installation-guide`
+</Tip>
+
+### 2. Make Your Changes
+
+<CardGroup cols={2}>
+  <Card title="Write Code" icon="code">
+    Implement your feature or fix
+  </Card>
+  <Card title="Add Tests" icon="flask">
+    Write tests for new functionality
+  </Card>
+  <Card title="Update Docs" icon="book">
+    Document user-facing changes
+  </Card>
+  <Card title="Follow Standards" icon="check">
+    Adhere to coding standards
+  </Card>
+</CardGroup>
+
+### 3. Run Quality Checks
+
+Before committing, ensure all checks pass:
+
+```bash
+npm run typecheck   # TypeScript compilation
+npm run lint        # ESLint
+npm run format      # Prettier formatting
+npm test            # Vitest test suite
+npm run build       # Production build
+```
+
+<Warning>
+  Pull requests with failing checks will not be merged.
+</Warning>
+
+### 4. Commit Your Changes
+
+Follow the [commit convention](#commit-convention):
+
+```bash
+git add .
+git commit -m "feat: add JSON output format for standup command"
+```
+
+### 5. Push and Create PR
+
+```bash
+git push origin feat/your-feature-name
+```
+
+Then open a pull request on GitHub against the `main` branch.
+
+## Coding Standards
+
+### TypeScript Style
+
+<AccordionGroup>
+  <Accordion title="Use strict mode">
+    Strict mode is enabled - no `any` types unless absolutely necessary.
+    
+    ```typescript
+    // Good ✓
+    function processData(data: unknown): string {
+      if (typeof data === 'string') {
+        return data;
+      }
+      throw new Error('Invalid data');
+    }
+
+    // Bad ✗
+    function processData(data: any): string {
+      return data;
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Add JSDoc comments">
+    All public functions should have JSDoc comments.
+    
+    ```typescript
+    /**
+     * Generates a standup summary from git commits
+     * @param days - Number of days to look back
+     * @returns Formatted standup text
+     */
+    export async function generateStandup(days: number): Promise<string> {
+      // Implementation
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Prefer async/await">
+    Use async/await over raw promises for better readability.
+    
+    ```typescript
+    // Good ✓
+    async function fetchData() {
+      const response = await fetch(url);
+      const data = await response.json();
+      return data;
+    }
+
+    // Avoid ✗
+    function fetchData() {
+      return fetch(url)
+        .then(response => response.json())
+        .then(data => data);
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Use readonly when appropriate">
+    Mark properties that shouldn't be mutated as `readonly`.
+    
+    ```typescript
+    interface Config {
+      readonly apiKey: string;
+      readonly endpoint: string;
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Code Formatting
+
+Formatting is enforced by **ESLint** and **Prettier**:
+
+| Rule | Value |
+|------|-------|
+| Indentation | 2 spaces |
+| Quotes | Single quotes |
+| Semicolons | Required |
+| Trailing commas | ES5 style |
+| Line width | 100 characters |
+| Line endings | LF (Unix) |
+
+<Tip>
+  Run `npm run lint:fix` and `npm run format` to auto-fix formatting issues.
+</Tip>
+
+### File Organization
+
+<Steps>
+  <Step title="One export per file (when possible)">
+    Makes imports clear and code easier to navigate
+  </Step>
+  <Step title="Co-locate tests in tests/ directory">
+    Match source file names: `src/core/notifications.ts` → `tests/notifications.test.ts`
+  </Step>
+  <Step title="Keep commands thin">
+    Commands should orchestrate, not contain business logic. Put logic in `src/core/`
+  </Step>
+</Steps>
+
+## Commit Convention
+
+DevDaily uses [Conventional Commits](https://www.conventionalcommits.org/), enforced by **commitlint**.
+
+### Format
+
+```
+<type>(<optional scope>): <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+### Commit Types
+
+| Type | Description | Example |
+|------|-------------|----------|
+| `feat` | New feature | `feat: add JSON output format` |
+| `fix` | Bug fix | `fix(pr): handle repos with no default branch` |
+| `docs` | Documentation only | `docs: update installation instructions` |
+| `style` | Formatting (no logic change) | `style: fix indentation` |
+| `refactor` | Code change (no fix or feature) | `refactor(journal): extract serialization logic` |
+| `perf` | Performance improvement | `perf: optimize git log parsing` |
+| `test` | Adding or updating tests | `test: add webhook integration tests` |
+| `build` | Build system or dependencies | `build: upgrade to typescript 5.7` |
+| `ci` | CI configuration | `ci: add Node.js 22 to test matrix` |
+| `chore` | Other changes | `chore: update .gitignore` |
+| `revert` | Revert previous commit | `revert: revert feat: add JSON output` |
+
+### Examples
+
+<CodeGroup>
+```bash Feature
+feat: add Slack thread support for notifications
+```
+
+```bash Bug Fix
+fix: clipboard copy failing on plain format
+```
+
+```bash Documentation
+docs: update installation instructions for Linux
+```
+
+```bash Test
+test: add integration tests for webhook notifications
+```
+
+```bash Refactor
+refactor(journal): extract snapshot serialization logic
+```
+</CodeGroup>
+
+### Commit Rules
+
+<Warning>
+  - Use lowercase for the description
+  - Don't end with a period
+  - Use imperative mood ("add feature" not "added feature")
+  - Keep the first line under 72 characters
+</Warning>
+
+## Pull Request Process
+
+### PR Title Format
+
+Use the same conventional commit format:
+
+```
+feat: add Slack thread support for notifications
+fix: clipboard copy failing on plain format
+```
+
+### PR Checklist
+
+<Steps>
+  <Step title="Fill out the PR template">
+    Describe what changed and why
+  </Step>
+  <Step title="Keep PRs focused">
+    One feature or fix per PR - smaller PRs are easier to review
+  </Step>
+  <Step title="Add tests">
+    New features and bug fixes must include tests
+  </Step>
+  <Step title="Update documentation">
+    If your change affects user-facing behavior, update README or help text
+  </Step>
+  <Step title="Ensure CI passes">
+    All checks must pass: typecheck, lint, format, tests, and build
+  </Step>
+  <Step title="Respond to feedback">
+    Address review comments promptly
+  </Step>
+</Steps>
+
+<Info>
+  We aim to review PRs within a few days. Feel free to ping if you haven't heard back.
+</Info>
+
+## Testing Requirements
+
+### Writing Tests
+
+Every new feature or bug fix should include tests:
+
+<Tabs>
+  <Tab title="Unit Tests">
+    ```typescript
+    // tests/new-feature.test.ts
+    import { describe, it, expect } from 'vitest';
+    import { newFeature } from '../src/core/new-feature.js';
+
+    describe('newFeature', () => {
+      it('returns expected output for valid input', () => {
+        const result = newFeature('test');
+        expect(result).toBe('expected');
+      });
+
+      it('throws error for invalid input', () => {
+        expect(() => newFeature('')).toThrow('Invalid input');
+      });
+    });
+    ```
+  </Tab>
+  <Tab title="Integration Tests">
+    ```typescript
+    // tests/workflow.test.ts
+    import { describe, it, expect, vi } from 'vitest';
+
+    describe('standup workflow', () => {
+      it('generates standup from commits', async () => {
+        // Mock git operations
+        // Test full workflow
+      });
+    });
+    ```
+  </Tab>
+</Tabs>
+
+### Running Tests
+
+```bash
+npm test                                    # All tests
+npx vitest run tests/new-feature.test.ts   # Specific file
+npm run test:watch                          # Watch mode
+npm run test:coverage                       # With coverage
+```
+
+<Check>
+  Tests must not require network access, git repositories, or API keys. Use mocks for external dependencies.
+</Check>
+
+## Code of Conduct
+
+This project follows the [Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/). Key points:
+
+<CardGroup cols={2}>
+  <Card title="Be Respectful" icon="handshake">
+    Treat everyone with respect and kindness
+  </Card>
+  <Card title="Be Inclusive" icon="users">
+    Welcome diverse perspectives and experiences
+  </Card>
+  <Card title="Be Professional" icon="briefcase">
+    Focus on constructive feedback and collaboration
+  </Card>
+  <Card title="Report Issues" icon="flag">
+    Report unacceptable behavior by opening an issue
+  </Card>
+</CardGroup>
+
+## Reporting Issues
+
+### Bug Reports
+
+When filing a bug report, include:
+
+<Steps>
+  <Step title="Version information">
+    ```bash
+    devdaily --version
+    node --version
+    ```
+  </Step>
+  <Step title="Operating system">
+    e.g., macOS 14.0, Ubuntu 22.04, Windows 11
+  </Step>
+  <Step title="Steps to reproduce">
+    What commands you ran and what happened
+  </Step>
+  <Step title="Expected vs actual behavior">
+    What you expected to see vs what actually happened
+  </Step>
+  <Step title="Debug output">
+    Run the failing command with `--debug` and include the output
+  </Step>
+</Steps>
+
+### Feature Requests
+
+For feature requests:
+
+1. Check existing issues to avoid duplicates
+2. Describe the problem your feature would solve
+3. Suggest a possible approach if you have one
+4. Label with `enhancement`
+
+## Need Help?
+
+<CardGroup cols={3}>
+  <Card title="Issues" icon="github" href="https://github.com/hempun10/devdaily/issues">
+    Browse existing issues
+  </Card>
+  <Card title="README" icon="book" href="https://github.com/hempun10/devdaily#readme">
+    Read the documentation
+  </Card>
+  <Card title="Doctor" icon="stethoscope">
+    Run `devdaily doctor` for diagnostics
+  </Card>
+</CardGroup>
+
+## Recognition
+
+All contributors are recognized in the project:
+
+- Contributors listed in GitHub contributors page
+- Significant contributions mentioned in release notes
+- First-time contributors welcomed in PR comments
+
+<Info>
+  Thank you for contributing to DevDaily! Your contributions help make developer workflows better for everyone.
+</Info>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Setup Guide" icon="wrench" href="/development/setup">
+    Set up your development environment
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/development/architecture">
+    Understand the project structure
+  </Card>
+  <Card title="Testing" icon="flask" href="/development/testing">
+    Learn about testing approach
+  </Card>
+</CardGroup>

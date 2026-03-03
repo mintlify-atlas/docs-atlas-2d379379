@@ -1,0 +1,327 @@
+---
+title: Standup Generation
+description: Generate daily standup notes from commits, PRs, and tickets with AI-powered summaries
+---
+
+The standup feature analyzes your git history, pull requests, and project management tickets to generate comprehensive daily standup notes automatically.
+
+## Quick Start
+
+Generate a standup for the last day:
+
+```bash
+devdaily standup
+```
+
+Generate a standup for the last 3 days:
+
+```bash
+devdaily standup --days 3
+```
+
+## How It Works
+
+<Steps>
+  <Step title="Gather Context">
+    DevDaily analyzes your recent commits, pull requests, and linked tickets from the specified time period.
+  </Step>
+  
+  <Step title="Extract Metadata">
+    Collects diff stats, file changes, work categories, and ticket information from your project management tool.
+  </Step>
+  
+  <Step title="AI Generation">
+    Uses GitHub Copilot CLI to generate a well-structured standup summary with your preferred tone and format.
+  </Step>
+  
+  <Step title="Output">
+    Displays the standup and optionally copies to clipboard or sends to Slack/Discord.
+  </Step>
+</Steps>
+
+## Command Options
+
+### Time Range
+
+| Option | Description | Default |
+|--------|-------------|----------|
+| `-d, --days <number>` | Number of days to look back | `1` |
+
+```bash
+# Last 2 days of work
+devdaily standup --days 2
+
+# Last full week
+devdaily standup --days 7
+```
+
+### Output Formats
+
+| Option | Description | Formats |
+|--------|-------------|----------|
+| `-f, --format <type>` | Output format | `markdown`, `slack`, `plain`, `json` |
+
+<Tabs>
+  <Tab title="Markdown">
+    ```bash
+    devdaily standup --format markdown
+    ```
+    
+    Perfect for copying into GitHub issues or documentation.
+  </Tab>
+  
+  <Tab title="Slack">
+    ```bash
+    devdaily standup --format slack
+    ```
+    
+    Formatted with Slack's markdown syntax for direct posting.
+  </Tab>
+  
+  <Tab title="Plain Text">
+    ```bash
+    devdaily standup --format plain
+    ```
+    
+    Clean text output without formatting characters.
+  </Tab>
+  
+  <Tab title="JSON">
+    ```bash
+    devdaily standup --format json
+    ```
+    
+    Structured JSON output for integrations and automation.
+  </Tab>
+</Tabs>
+
+### Tone Control
+
+| Option | Description | Tones |
+|--------|-------------|-------|
+| `--tone <type>` | Output tone style | `engineering`, `mixed`, `business` |
+
+<Accordion title="Tone Examples">
+  - **engineering**: Technical details, implementation focus
+  - **mixed**: Balanced technical and business language (default)
+  - **business**: High-level outcomes, stakeholder-friendly
+</Accordion>
+
+```bash
+# Technical audience
+devdaily standup --tone engineering
+
+# Stakeholder update
+devdaily standup --tone business
+```
+
+### Filtering
+
+| Option | Description |
+|--------|-------------|
+| `-a, --author <email>` | Filter commits by author email |
+| `-t, --ticket <id...>` | Include specific ticket/issue IDs |
+| `--no-tickets` | Skip fetching ticket context |
+| `--no-prs` | Skip fetching PR context |
+
+```bash
+# Filter by author
+devdaily standup --author your.email@company.com
+
+# Include specific tickets
+devdaily standup --ticket PROJ-123 --ticket PROJ-124
+
+# Skip external API calls
+devdaily standup --no-tickets --no-prs
+```
+
+### Preview and Debug
+
+| Option | Description |
+|--------|-------------|
+| `--preview` | Show context and ask for confirmation before generating |
+| `--context` | Display detailed work context analysis |
+| `--raw-context` | Output only the raw context block (no AI) |
+| `--debug` | Show full context and prompt sent to Copilot |
+
+```bash
+# Preview what will be included
+devdaily standup --preview
+
+# See detailed analysis
+devdaily standup --context
+
+# Debug mode
+devdaily standup --debug
+```
+
+### Notifications
+
+<Note>
+  Configure webhooks first with `devdaily init --notifications`
+</Note>
+
+| Option | Description |
+|--------|-------------|
+| `--send` | Send to configured channels (Slack/Discord) |
+| `--slack` | Send to Slack only |
+| `--discord` | Send to Discord only |
+| `--test-webhook` | Test webhook configuration |
+
+```bash
+# Send to all configured channels
+devdaily standup --send
+
+# Send to Slack only
+devdaily standup --slack
+
+# Test your webhook setup
+devdaily standup --test-webhook
+```
+
+### Clipboard and Journal
+
+| Option | Description |
+|--------|-------------|
+| `--no-copy` | Don't copy to clipboard |
+| `--no-journal` | Skip auto-saving snapshot to journal |
+
+```bash
+# Skip clipboard copy
+devdaily standup --no-copy
+
+# Don't save to journal
+devdaily standup --no-journal
+```
+
+## What Gets Analyzed
+
+The standup feature builds rich context from multiple sources:
+
+### Git History
+- Commit messages and hashes
+- File changes and diff statistics
+- Branch information
+- Author and timestamp data
+
+### Pull Requests
+- PR titles and states (open/merged)
+- Linked branches
+- Associated ticket references
+
+### Tickets & Issues
+- Ticket IDs from commits and branch names
+- Ticket titles and status
+- Priority and type information
+
+### Work Categories
+- Automatically categorized by file paths
+- Shows percentage breakdown (frontend, backend, etc.)
+- Top changed files with frequency
+
+## Output Components
+
+A typical standup includes:
+
+1. **Title**: "Daily Standup" or "Work Summary (N days)"
+2. **Summary**: AI-generated narrative of your work
+3. **Stats Bar**: Commits, PRs, tickets, changes, primary area
+4. **Metadata**: Days covered, branch name, repository
+
+<Tip>
+  The stats bar can be disabled in config with `output.showStats = false`
+</Tip>
+
+## Example Workflow
+
+```bash
+# Morning standup - check what you did yesterday
+devdaily standup --preview
+
+# Generate and send to Slack
+devdaily standup --format slack --send
+
+# Weekly summary for Friday
+devdaily standup --days 5 --tone business
+
+# Debug if something seems off
+devdaily standup --debug --context
+```
+
+## Advanced Usage
+
+### Custom Date Ranges
+
+```bash
+# Last 2 days with specific tickets
+devdaily standup --days 2 --ticket PROJ-456
+
+# Engineering format with full context
+devdaily standup --tone engineering --context
+```
+
+### Integration Workflows
+
+```bash
+# Generate JSON for automation
+devdaily standup --format json > standup.json
+
+# Test notification setup
+devdaily standup --test-webhook
+
+# Preview before sending
+devdaily standup --preview --send
+```
+
+### Troubleshooting
+
+<Accordion title="No commits found">
+  If you see "No commits or PRs found":
+  
+  - Check you're in a git repository
+  - Increase `--days` to look back further
+  - Verify commits exist: `git log --since="1 day ago"`
+</Accordion>
+
+<Accordion title="Webhook test fails">
+  If webhook tests fail:
+  
+  1. Check your webhook URL in `.devdaily.secrets.json`
+  2. For Slack: Visit https://api.slack.com/apps → Incoming Webhooks
+  3. For Discord: Server Settings → Integrations → Webhooks
+  4. Re-run: `devdaily init --notifications`
+</Accordion>
+
+<Accordion title="Copilot CLI not found">
+  Install GitHub Copilot CLI:
+  
+  ```bash
+  gh extension install github/gh-copilot
+  ```
+</Accordion>
+
+## Configuration
+
+Customize standup behavior in your `.devdaily.json`:
+
+```json
+{
+  "standup": {
+    "defaultDays": 1
+  },
+  "output": {
+    "format": "markdown",
+    "showStats": true,
+    "copyToClipboard": true
+  },
+  "git": {
+    "defaultBranch": "main"
+  }
+}
+```
+
+## Related Commands
+
+- [`devdaily week`](/features/weekly-summaries) - Generate weekly summaries
+- [`devdaily pr`](/features/pr-descriptions) - Generate PR descriptions
+- [`devdaily context`](/features/context-recovery) - Recover work context

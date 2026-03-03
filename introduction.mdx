@@ -1,0 +1,203 @@
+---
+title: Introduction
+description: DevDaily AI - Your AI-powered developer memory for auto-generating standup notes, PR descriptions, and weekly summaries from your git history
+---
+
+# Welcome to DevDaily AI
+
+DevDaily is your **AI-powered developer memory** that auto-generates standup notes, PR descriptions, and weekly summaries from your git history.
+
+<Note>
+Developers lose hours every week writing standup notes, crafting PR descriptions, and compiling weekly reports. DevDaily uses GitHub Copilot CLI to generate professional summaries in seconds.
+</Note>
+
+## What Makes DevDaily Different?
+
+DevDaily builds a **persistent local memory** of your work. Every standup you run, every PR you generate, every branch you switch — DevDaily silently records a snapshot in `~/.config/devdaily/journal/`.
+
+<CardGroup cols={2}>
+  <Card title="Context Recovery" icon="clock-rotate-left">
+    `devdaily context` tells you exactly where you left off, even days later
+  </Card>
+  <Card title="Work Search" icon="magnifying-glass">
+    `devdaily recall auth` finds every time you touched authentication code
+  </Card>
+  <Card title="Weekly Summaries" icon="calendar-week">
+    `devdaily week` produces accurate summaries from your local journal
+  </Card>
+  <Card title="Cross-Project" icon="diagram-project">
+    Work summaries across all your repositories with `--all-projects`
+  </Card>
+</CardGroup>
+
+<Tip>
+All data stays local. No cloud. No telemetry. Everything is stored in `~/.config/devdaily/journal/`
+</Tip>
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Standup Generator" icon="calendar-check">
+    Generate daily standup notes from commits, PRs, and tickets with AI-powered summaries
+  </Card>
+  
+  <Card title="PR Descriptions" icon="code-pull-request">
+    Auto-generate PR titles and bodies with template support and conventional commit format
+  </Card>
+  
+  <Card title="Weekly Summaries" icon="chart-line">
+    Compile weekly accomplishments with detailed stats and AI analysis
+  </Card>
+  
+  <Card title="Context Recovery" icon="brain">
+    Recover exactly where you left off after a context switch with intelligent work tracking
+  </Card>
+  
+  <Card title="Work Search" icon="search">
+    Search your work history by keyword, file, tag, or date across all projects
+  </Card>
+  
+  <Card title="Auto-Snapshots" icon="camera">
+    Silent work tracking as a side-effect of commands you already run
+  </Card>
+  
+  <Card title="PM Integration" icon="ticket">
+    GitHub Issues, Jira, and Linear ticket linking with automatic metadata extraction
+  </Card>
+  
+  <Card title="Notifications" icon="bell">
+    Send standups to Slack or Discord via webhooks
+  </Card>
+</CardGroup>
+
+## How It Works
+
+<Steps>
+  <Step title="Install DevDaily">
+    ```bash
+    npm install -g devdaily-ai
+    ```
+  </Step>
+  
+  <Step title="Set up GitHub Copilot CLI">
+    DevDaily uses GitHub Copilot CLI for AI-powered text generation:
+    ```bash
+    gh auth login
+    gh extension install github/gh-copilot
+    ```
+  </Step>
+  
+  <Step title="Initialize in your project">
+    ```bash
+    devdaily init
+    ```
+    This sets up aliases, shell completions, and optional git hooks.
+  </Step>
+  
+  <Step title="Generate your first standup">
+    ```bash
+    devdaily standup
+    ```
+    Or use the short alias: `dd s`
+  </Step>
+</Steps>
+
+## Quick Commands
+
+Get started with these essential commands:
+
+<CodeGroup>
+```bash Standup
+# Generate today's standup
+devdaily standup
+
+# Last 3 days of work
+devdaily standup --days 3
+
+# Send to Slack
+devdaily standup --send
+```
+
+```bash PR Description
+# Generate PR description
+devdaily pr
+
+# Create PR on GitHub
+devdaily pr --create
+
+# Create as draft
+devdaily pr --draft
+```
+
+```bash Weekly Summary
+# Current week summary
+devdaily week
+
+# Last week
+devdaily week --last
+
+# All projects
+devdaily week --all-projects
+```
+
+```bash Context Recovery
+# Where did I leave off?
+devdaily context
+
+# AI-powered summary
+devdaily context --ai
+
+# All projects
+devdaily context --all-projects
+```
+</CodeGroup>
+
+## Output Formats
+
+DevDaily supports multiple output formats for different workflows:
+
+- **Markdown** - Default format, perfect for copying to documentation
+- **Slack** - Formatted with Slack's markdown syntax
+- **Plain** - Clean text without formatting
+- **JSON** - Machine-readable for automation
+
+```bash
+devdaily standup --format slack
+devdaily week --format json
+```
+
+## Privacy & Security
+
+<CardGroup cols={2}>
+  <Card title="Local-First" icon="hard-drive">
+    All data stays on your machine in `~/.config/devdaily/journal/`. Nothing is sent to any server.
+  </Card>
+  
+  <Card title="Secrets Management" icon="lock">
+    Secrets stored separately in `.devdaily.secrets.json` (auto-added to `.gitignore`)
+  </Card>
+  
+  <Card title="Opt-in Hooks" icon="git">
+    Git hooks are optional and POSIX-compatible. They append to existing hooks instead of overwriting.
+  </Card>
+  
+  <Card title="GitHub Copilot" icon="robot">
+    AI generation uses GitHub Copilot CLI under your existing Copilot agreement
+  </Card>
+</CardGroup>
+
+<Warning>
+DevDaily processes your git history locally and sends text prompts to GitHub Copilot CLI. Your source code is **not uploaded**.
+</Warning>
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install DevDaily and set up prerequisites
+  </Card>
+  
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get from install to running your first commands
+  </Card>
+</CardGroup>

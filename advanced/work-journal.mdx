@@ -1,0 +1,430 @@
+---
+title: 'Work Journal'
+description: 'Persistent local storage for daily work snapshots and activity tracking'
+---
+
+## Overview
+
+The Work Journal is DevDaily's "memory" layer — it stores daily work snapshots locally so you can recall what you were doing on any date, across any project. It powers context recovery, smart recall, and cross-project weekly summaries.
+
+## Storage Location
+
+All journal data is stored locally at:
+
+```
+~/.config/devdaily/journal/
+```
+
+Nothing is sent to external servers. Your work history stays on your machine.
+
+## Directory Structure
+
+The journal uses a date-based directory structure:
+
+```
+~/.config/devdaily/journal/
+  ├── index.json                    # Project registry + metadata
+  ├── 2024-01-15/
+  │   ├── my-project.json           # Snapshot for that project on that day
+  │   └── other-project.json
+  ├── 2024-01-16/
+  │   └── my-project.json
+  └── 2024-01-17/
+      ├── my-project.json
+      └── other-project.json
+```
+
+### Index File
+
+The `index.json` file maintains a registry of all projects and their snapshot history:
+
+```json
+{
+  "version": 1,
+  "projects": [
+    {
+      "projectId": "my-project",
+      "repoPath": "/Users/me/code/my-project",
+      "remoteUrl": "https://github.com/user/my-project",
+      "lastSnapshotDate": "2024-01-17",
+      "snapshotCount": 45,
+      "firstSeen": "2023-12-01"
+    }
+  ],
+  "lastUpdated": "2024-01-17T14:30:00Z"
+}
+```
+
+### Snapshot Files
+
+Each snapshot is stored as a JSON file with this structure:
+
+```json
+{
+  "date": "2024-01-17",
+  "takenAt": "2024-01-17T14:30:00Z",
+  "projectId": "my-project",
+  "repoPath": "/Users/me/code/my-project",
+  "remoteUrl": "https://github.com/user/my-project",
+  "currentBranch": "feature/new-auth",
+  "activeBranches": [...],
+  "todayCommits": [...],
+  "recentCommits": [...],
+  "pullRequests": [...],
+  "tickets": [...],
+  "categories": [...],
+  "topChangedFiles": [...],
+  "diffStats": { "filesChanged": 12, "insertions": 340, "deletions": 120 },
+  "notes": "Working on user authentication",
+  "aiSummary": "Implemented JWT-based authentication",
+  "tags": ["feature", "auth", "auto:standup"]
+}
+```
+
+## Snapshot Data Structure
+
+### Core Metadata
+
+<ResponseField name="date" type="string" required>
+  ISO date string (YYYY-MM-DD)
+</ResponseField>
+
+<ResponseField name="takenAt" type="string" required>
+  ISO timestamp of when snapshot was taken
+</ResponseField>
+
+<ResponseField name="projectId" type="string" required>
+  Sanitized repo name or directory name
+</ResponseField>
+
+<ResponseField name="repoPath" type="string" required>
+  Absolute path to the repo root
+</ResponseField>
+
+### Git Information
+
+<ResponseField name="currentBranch" type="string" required>
+  Current branch at snapshot time
+</ResponseField>
+
+<ResponseField name="activeBranches" type="array" required>
+  All active (non-merged) local branches with status
+</ResponseField>
+
+<ResponseField name="todayCommits" type="array" required>
+  Commits made on the snapshot date
+</ResponseField>
+
+<ResponseField name="recentCommits" type="array" required>
+  Commits made in the last 7 days for context
+</ResponseField>
+
+### Work Context
+
+<ResponseField name="pullRequests" type="array">
+  Open/recently merged PRs
+</ResponseField>
+
+<ResponseField name="tickets" type="array">
+  Active/recently touched tickets from Jira, Linear, GitHub Issues
+</ResponseField>
+
+<ResponseField name="categories" type="array">
+  Work categories breakdown (e.g., frontend: 60%, backend: 40%)
+</ResponseField>
+
+<ResponseField name="topChangedFiles" type="array">
+  Most frequently changed files
+</ResponseField>
+
+<ResponseField name="diffStats" type="object">
+  Diff statistics: filesChanged, insertions, deletions
+</ResponseField>
+
+### User-Added Content
+
+<ResponseField name="notes" type="string">
+  Free-form notes attached by the user
+</ResponseField>
+
+<ResponseField name="aiSummary" type="string">
+  AI-generated summary of what you were working on
+</ResponseField>
+
+<ResponseField name="tags" type="array">
+  Auto-extracted + user-supplied tags for search
+</ResponseField>
+
+## Search and Retrieval
+
+### Search by Query
+
+The journal supports full-text search across all snapshot content:
+
+```typescript
+const journal = new WorkJournal();
+const results = journal.search({
+  query: 'authentication',
+  from: '2024-01-01',
+  to: '2024-01-31',
+  limit: 10
+});
+```
+
+**Searchable fields:**
+- Commit messages
+- Branch names
+- File paths
+- PR titles
+- Ticket IDs and titles
+- Notes
+- AI summaries
+- Tags
+- Project IDs
+
+### Search by Tags
+
+```typescript
+const results = journal.search({
+  tags: ['feature', 'auth'],
+  from: '2024-01-01',
+  to: '2024-01-31'
+});
+```
+
+### Search by Project
+
+```typescript
+const results = journal.search({
+  projectId: 'my-project',
+  from: '2024-01-01',
+  to: '2024-01-31'
+});
+```
+
+## Relevance Scoring
+
+Search results are ranked by relevance:
+
+- **Branch name match**: +10 points
+- **Active branch match**: +5 points
+- **PR title match**: +5 points
+- **Ticket match**: +5 points
+- **Tag match**: +5 points
+- **Notes match**: +4 points
+- **Commit message match**: +3 points
+- **AI summary match**: +3 points
+- **Project ID match**: +3 points
+- **File path match**: +2 points
+
+From `src/core/work-journal.ts:1050`:
+
+```typescript
+private matchSnapshot(
+  snapshot: WorkSnapshot,
+  query?: string,
+  tags?: string[]
+): { score: number; reasons: string[] } {
+  let score = 0;
+  const reasons: string[] = [];
+
+  // Tag matching
+  if (tags && tags.length > 0) {
+    const snapshotTags = new Set(snapshot.tags.map((t) => t.toLowerCase()));
+    for (const tag of tags) {
+      if (snapshotTags.has(tag.toLowerCase())) {
+        score += 5;
+        reasons.push(`tag: ${tag}`);
+      }
+    }
+  }
+
+  // Text query matching
+  if (query) {
+    const q = query.toLowerCase();
+    
+    // Branch name match (high value)
+    if (snapshot.currentBranch.toLowerCase().includes(q)) {
+      score += 10;
+      reasons.push(`branch: ${snapshot.currentBranch}`);
+    }
+    // ... additional matching logic
+  }
+
+  return { score, reasons };
+}
+```
+
+## Auto-Tagging
+
+Snapshots are automatically tagged based on content:
+
+### Branch Prefixes
+- `feature/` → `feature` tag
+- `fix/`, `bugfix/` → `bugfix` tag
+- `hotfix/` → `hotfix` tag
+- `chore/` → `chore` tag
+- `refactor/` → `refactor` tag
+- `docs/` → `docs` tag
+- `test/` → `test` tag
+
+### Conventional Commits
+Extracted from commit messages:
+- `feat:` → `feat` tag
+- `fix:` → `fix` tag
+- `docs:` → `docs` tag
+- `refactor:` → `refactor` tag
+- `test:` → `test` tag
+- `chore:` → `chore` tag
+- `perf:` → `perf` tag
+
+### Ticket IDs
+- `PROJ-123` → `PROJ-123` tag
+- `#456` → `#456` tag
+
+### Work Categories
+Categories with ≥20% contribution:
+- `frontend`, `backend`, `api`, `database`, etc.
+
+### PR Labels
+All PR labels are added as tags
+
+## Maintenance
+
+### Get Storage Stats
+
+```typescript
+const journal = new WorkJournal();
+const stats = journal.getStats();
+
+console.log(stats);
+// {
+//   totalSnapshots: 245,
+//   totalDates: 87,
+//   totalProjects: 5,
+//   oldestEntry: '2023-12-01',
+//   newestEntry: '2024-01-17',
+//   storageBytes: 4521340
+// }
+```
+
+### Prune Old Snapshots
+
+Remove snapshots older than a specific number of days:
+
+```typescript
+const journal = new WorkJournal();
+const result = journal.prune(365); // Keep last year only
+
+console.log(result);
+// {
+//   removedDates: ['2022-11-01', '2022-11-02', ...],
+//   removedSnapshots: 42
+// }
+```
+
+<Warning>
+Pruning is permanent. Removed snapshots cannot be recovered.
+</Warning>
+
+### Rebuild Index
+
+If your index becomes corrupted or out of sync:
+
+```typescript
+const journal = new WorkJournal();
+journal.rebuildIndex();
+```
+
+This scans all date directories and reconstructs the project registry.
+
+## Cross-Project Summaries
+
+Get aggregated activity across all projects:
+
+```typescript
+const journal = new WorkJournal();
+const summary = journal.getCrossProjectSummary('2024-01-01', '2024-01-07');
+
+console.log(summary);
+// {
+//   projects: [
+//     {
+//       projectId: 'my-project',
+//       totalCommits: 23,
+//       activeDays: 5,
+//       branches: ['main', 'feature/auth'],
+//       topFiles: ['src/auth.ts', 'src/api.ts'],
+//       categories: [{ name: 'backend', percentage: 70 }],
+//       diffStats: { filesChanged: 45, insertions: 890, deletions: 340 }
+//     }
+//   ],
+//   totalCommits: 23,
+//   totalActiveDays: 5,
+//   dateRange: { from: '2024-01-01', to: '2024-01-07' }
+// }
+```
+
+## File History
+
+Find when a specific file was last worked on:
+
+```typescript
+const journal = new WorkJournal();
+const history = journal.findFileHistory('src/auth.ts', 'my-project', 90);
+
+console.log(history);
+// [
+//   { date: '2024-01-15', commits: [...] },
+//   { date: '2024-01-10', commits: [...] }
+// ]
+```
+
+## Snapshot Merging
+
+When you take multiple snapshots on the same day for the same project, they are **merged** instead of overwritten:
+
+- Newer metadata wins (branch, timestamp, etc.)
+- Commits are deduplicated by hash
+- Branches are deduplicated by name
+- PRs are deduplicated by number
+- Notes are concatenated
+- Tags are combined
+
+From `src/core/work-journal.ts:987`:
+
+```typescript
+private mergeSnapshots(existing: WorkSnapshot, incoming: WorkSnapshot): WorkSnapshot {
+  // Deduplicate commits by hash
+  const commitMap = new Map<string, JournalCommit>();
+  for (const c of existing.todayCommits) {
+    commitMap.set(c.hash, c);
+  }
+  for (const c of incoming.todayCommits) {
+    commitMap.set(c.hash, c); // Incoming wins on duplicates
+  }
+
+  // Merge tags
+  const allTags = new Set([...existing.tags, ...incoming.tags]);
+
+  return {
+    ...incoming,
+    takenAt: new Date().toISOString(),
+    todayCommits: Array.from(commitMap.values()),
+    notes: existing.notes
+      ? incoming.notes
+        ? `${existing.notes}\n\n${incoming.notes}`
+        : existing.notes
+      : incoming.notes,
+    tags: Array.from(allTags),
+  };
+}
+```
+
+## Privacy
+
+<Info>
+All journal data is stored **locally** at `~/.config/devdaily/journal/`. Nothing is ever sent to external servers.
+</Info>
+
+See the [Privacy](/advanced/privacy) page for more details.

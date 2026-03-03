@@ -1,0 +1,426 @@
+---
+title: PR Description Generation
+description: Generate comprehensive PR descriptions from your branch commits, tickets, and code changes
+---
+
+The PR feature analyzes your current branch, commits, linked tickets, and code diffs to automatically generate well-structured pull request descriptions that follow your team's conventions.
+
+## Quick Start
+
+Generate a PR description for your current branch:
+
+```bash
+devdaily pr
+```
+
+Create a PR directly on GitHub:
+
+```bash
+devdaily pr --create
+```
+
+## How It Works
+
+<Steps>
+  <Step title="Analyze Branch">
+    DevDaily examines your current branch, comparing it to the base branch to identify all commits and changes.
+  </Step>
+  
+  <Step title="Extract Context">
+    Collects ticket IDs from branch names and commit messages, fetches ticket details, and analyzes code diffs.
+  </Step>
+  
+  <Step title="Apply Template">
+    If a PR template exists (`.github/PULL_REQUEST_TEMPLATE.md`), it structures the content accordingly.
+  </Step>
+  
+  <Step title="AI Generation">
+    Uses GitHub Copilot CLI to generate a comprehensive description following your team's guidelines.
+  </Step>
+  
+  <Step title="Interactive Actions">
+    Choose to copy to clipboard, create PR on GitHub, or preview in browser.
+  </Step>
+</Steps>
+
+## Command Options
+
+### Basic Options
+
+| Option | Description | Default |
+|--------|-------------|----------|
+| `-b, --base <branch>` | Base branch to compare against | Auto-detected or `main` |
+| `-c, --create` | Create PR on GitHub immediately | `false` |
+| `-d, --draft` | Create as draft PR | `false` |
+| `-p, --preview` | Show preview before creating | `false` |
+
+```bash
+# Compare against develop branch
+devdaily pr --base develop
+
+# Create draft PR
+devdaily pr --draft
+
+# Preview before creating
+devdaily pr --create --preview
+```
+
+### Context Control
+
+| Option | Description |
+|--------|-------------|
+| `-t, --ticket <id>` | Include specific ticket/issue for context |
+| `--no-tickets` | Skip fetching ticket context |
+| `--no-template` | Ignore PR template, use default format |
+| `--no-diff` | Skip including diff context in AI prompt |
+| `--no-prompt-file` | Ignore custom PR prompt file |
+
+<Tabs>
+  <Tab title="With Tickets">
+    ```bash
+    # Include specific ticket
+    devdaily pr --ticket PROJ-456
+    
+    # Skip ticket lookup
+    devdaily pr --no-tickets
+    ```
+  </Tab>
+  
+  <Tab title="With Template">
+    ```bash
+    # Use template if available
+    devdaily pr
+    
+    # Ignore template
+    devdaily pr --no-template
+    ```
+  </Tab>
+  
+  <Tab title="With Diff">
+    ```bash
+    # Include full diff context (default)
+    devdaily pr
+    
+    # Skip diff to speed up
+    devdaily pr --no-diff
+    ```
+  </Tab>
+</Tabs>
+
+### Interactive Mode
+
+| Option | Description |
+|--------|-------------|
+| `-i, --interactive` | Interactive mode for labels, reviewers, assignees |
+
+```bash
+devdaily pr --interactive
+```
+
+<Note>
+  Interactive mode fetches repository metadata and allows you to select:
+  - Labels to apply to the PR
+  - Reviewers to request
+  - Assignees for the PR
+</Note>
+
+### Clipboard and Journal
+
+| Option | Description |
+|--------|-------------|
+| `--no-copy` | Don't copy to clipboard |
+| `--no-journal` | Skip auto-saving snapshot to journal |
+| `--debug` | Show debug information (prompts, raw AI input) |
+
+```bash
+# Skip clipboard copy
+devdaily pr --no-copy
+
+# Debug mode
+devdaily pr --debug
+```
+
+## PR Templates
+
+DevDaily automatically detects and uses PR templates from your repository:
+
+### Supported Template Locations
+
+- `.github/PULL_REQUEST_TEMPLATE.md`
+- `.github/pull_request_template.md`
+- `PULL_REQUEST_TEMPLATE.md`
+- `docs/PULL_REQUEST_TEMPLATE.md`
+
+### Template Sections
+
+The AI recognizes common template sections and fills them appropriately:
+
+- **Description**: Summary of changes
+- **Type**: Feature, bugfix, refactor, etc.
+- **Impact**: Affected areas and potential risks
+- **Testing**: How changes were tested
+- **Breaking Changes**: Any breaking changes introduced
+- **Additional Info**: Context, screenshots, notes
+
+<Tip>
+  DevDaily parses templates with headers like `## Description`, `## Testing`, etc., and structures the AI output to match.
+</Tip>
+
+## Custom PR Guidelines
+
+You can provide team-specific PR writing guidelines:
+
+### Create a PR Prompt File
+
+Add `.devdaily/pr-prompt.md` to your repository:
+
+```markdown
+# PR Description Guidelines
+
+## Style
+- Use present tense ("Add feature" not "Added feature")
+- Keep descriptions concise but complete
+- Reference ticket IDs in format: PROJ-123
+
+## Structure
+1. Start with a one-line summary
+2. Explain the "why" before the "what"
+3. List breaking changes prominently
+4. Include testing steps
+
+## Examples
+See our wiki for PR description examples.
+```
+
+DevDaily will include these guidelines when generating descriptions.
+
+## What Gets Analyzed
+
+### Branch Information
+- Current branch name
+- Base branch for comparison
+- Branch creation point
+
+### Commits
+- All commit messages on the branch
+- Commit hashes and authors
+- Commit timestamps
+
+### Code Changes
+- Files changed
+- Diff statistics (insertions/deletions)
+- Code diff content (configurable limit)
+
+### Tickets & Issues
+- Ticket IDs extracted from:
+  - Branch name (e.g., `feature/PROJ-123-login`)
+  - Commit messages
+  - Manual `--ticket` flag
+- Ticket details from your PM tool:
+  - Title and description
+  - Status and priority
+  - Type (bug, feature, task)
+
+## PR Title Generation
+
+The AI generates PR titles following conventional commit style:
+
+- `feat: Add user authentication`
+- `fix: Resolve login redirect issue`
+- `refactor: Simplify auth flow`
+- `docs: Update API documentation`
+
+<Accordion title="PR Type Detection">
+  DevDaily analyzes commit messages to determine PR type:
+  
+  - **feature**: New features (`feat:`, `feature:`)
+  - **fix**: Bug fixes (`fix:`, `bugfix:`)
+  - **refactor**: Code refactoring (`refactor:`)
+  - **docs**: Documentation (`docs:`)
+  - **test**: Tests (`test:`)
+  - **chore**: Maintenance (`chore:`)
+</Accordion>
+
+## Interactive Actions
+
+After generating a PR description, you can:
+
+1. **Copy to clipboard** - For manual PR creation
+2. **Create PR on GitHub** - Direct GitHub integration
+3. **Create draft PR** - Mark as work-in-progress
+4. **Preview in browser** - Open GitHub compare view
+5. **Configure labels & reviewers** - Interactive metadata selection
+
+## Example Workflows
+
+### Basic PR Creation
+
+```bash
+# Generate description
+devdaily pr
+
+# Choose "Create PR on GitHub" from menu
+```
+
+### Draft PR with Preview
+
+```bash
+devdaily pr --draft --preview
+```
+
+### Interactive with Labels
+
+```bash
+# Full interactive mode
+devdaily pr --interactive
+
+# Select labels, reviewers, and assignees
+# Then create PR
+```
+
+### Custom Base Branch
+
+```bash
+# Compare against develop
+devdaily pr --base develop --create
+```
+
+### Quick Copy to Clipboard
+
+```bash
+# Generate and copy
+devdaily pr
+
+# Choose "Copy to clipboard" from menu
+```
+
+## Output Preview
+
+When using `--preview` or `--interactive`, you'll see:
+
+```
+┌─────────────────────────────────────────────┐
+│ PR Preview                                   │
+├─────────────────────────────────────────────┤
+│
+│  ⬤ feat: Add user authentication system
+│
+│  feature/PROJ-123-auth → main
+│  🏷️  enhancement  feature
+│  👤 Assignees: username
+│  👁️  Reviewers: reviewer1, reviewer2
+│
+├─────────────────────────────────────────────┤
+│  ## Description
+│  Implements OAuth2 authentication flow...
+│  
+│  ## Testing
+│  - Unit tests added for auth service
+│  - Manual testing completed
+└─────────────────────────────────────────────┘
+```
+
+## GitHub Integration
+
+<Note>
+  Requires `gh` CLI authenticated with GitHub
+</Note>
+
+### Create PR Directly
+
+```bash
+devdaily pr --create
+```
+
+This will:
+1. Push your branch to remote if needed
+2. Create the PR on GitHub
+3. Apply labels if selected
+4. Request reviewers if selected
+5. Assign the PR if specified
+6. Return the PR URL
+
+### Preview in Browser
+
+Open GitHub's compare view without creating a PR:
+
+```bash
+devdaily pr
+# Select "Preview in browser" from menu
+```
+
+## Configuration
+
+Customize PR generation in `.devdaily.json`:
+
+```json
+{
+  "pr": {
+    "defaultBase": "main",
+    "includeDiff": true,
+    "maxDiffLines": 200
+  },
+  "output": {
+    "showStats": true,
+    "copyToClipboard": true
+  }
+}
+```
+
+### Configuration Options
+
+| Option | Description | Default |
+|--------|-------------|----------|
+| `pr.defaultBase` | Default base branch | `"main"` |
+| `pr.includeDiff` | Include diff in AI prompt | `true` |
+| `pr.maxDiffLines` | Max diff lines to include | `200` |
+
+<Tip>
+  If diff is too large, it's automatically truncated to fit the AI context window.
+</Tip>
+
+## Troubleshooting
+
+<Accordion title="Cannot create PR from main branch">
+  You cannot create a PR from the base branch itself.
+  
+  ```bash
+  # Switch to a feature branch first
+  git checkout -b feature/your-feature
+  ```
+</Accordion>
+
+<Accordion title="No commits on this branch">
+  Ensure you have commits on your branch:
+  
+  ```bash
+  git log
+  ```
+  
+  If empty, make some commits first.
+</Accordion>
+
+<Accordion title="Copilot CLI not found">
+  Install GitHub Copilot CLI:
+  
+  ```bash
+  brew install copilot-cli
+  # or
+  gh extension install github/gh-copilot
+  ```
+</Accordion>
+
+<Accordion title="Failed to create PR">
+  Ensure `gh` CLI is authenticated:
+  
+  ```bash
+  gh auth status
+  gh auth login
+  ```
+</Accordion>
+
+## Related Commands
+
+- [`devdaily standup`](/features/standup) - Generate standup notes
+- [`devdaily week`](/features/weekly-summaries) - Generate weekly summaries
+- [`devdaily context`](/features/context-recovery) - Recover work context

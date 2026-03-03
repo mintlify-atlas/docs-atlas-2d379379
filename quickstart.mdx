@@ -1,80 +1,629 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick Start
+description: Get started with DevDaily AI - from installation to running your first standup, PR, and weekly summary commands
 ---
 
-## Get started in three steps
+# Quick Start
 
-Get your documentation site running locally and make your first customization.
-
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+Get up and running with DevDaily in 5 minutes. This guide walks you through initialization and your first commands.
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+Make sure you've completed the [installation](/installation) before proceeding.
 </Note>
+
+## Initial Setup
+
+<Steps>
+  <Step title="Navigate to a git repository">
+    DevDaily analyzes your git history, so you need to be in a git repository:
+    
+    ```bash
+    cd /path/to/your/project
+    ```
+    
+    <Tip>
+    If you don't have a project handy, you can clone any repository to test DevDaily.
+    </Tip>
+  </Step>
+  
+  <Step title="Run the initialization wizard">
+    ```bash
+    devdaily init
+    ```
+    
+    This interactive setup wizard will:
+    - Create a `dd` alias for quick access
+    - Set up shell completions for tab completion
+    - Optionally configure git hooks for auto-snapshots
+    - Optionally set up Slack/Discord notifications
+    
+    Example output:
+    ```
+    ╭─────────────────────────────────────────╮
+    │                                         │
+    │   DevDaily Setup Wizard                 │
+    │                                         │
+    ╰─────────────────────────────────────────╯
+    
+    ? Set up shell alias 'dd'? (Y/n) 
+    ✓ Added alias to ~/.zshrc
+    
+    ? Install shell completions? (Y/n) 
+    ✓ Shell completions installed
+    
+    ? Install git hooks for auto-snapshots? (y/N) 
+    ○ Skipped git hooks
+    
+    Setup complete! Restart your shell or run:
+      source ~/.zshrc
+    ```
+  </Step>
+  
+  <Step title="Reload your shell">
+    ```bash
+    source ~/.zshrc  # or ~/.bashrc for bash
+    ```
+    
+    Or simply open a new terminal window.
+  </Step>
+  
+  <Step title="Verify the setup">
+    ```bash
+    dd --version
+    ```
+    
+    The `dd` alias should now work as a shortcut for `devdaily`.
+  </Step>
+</Steps>
+
+## Your First Standup
+
+Let's generate your first standup note from your recent commits.
+
+<Steps>
+  <Step title="Generate a standup for today's work">
+    ```bash
+    devdaily standup
+    ```
+    
+    Or use the short alias:
+    ```bash
+    dd s
+    ```
+    
+    DevDaily will:
+    1. Analyze your git commits from the last 24 hours
+    2. Fetch related PRs and tickets
+    3. Generate an AI-powered summary using GitHub Copilot CLI
+    4. Copy the result to your clipboard
+  </Step>
+  
+  <Step title="Review the output">
+    Example standup output:
+    
+    ```markdown
+    ╭──────────────────────────────────────────╮
+    │                                          │
+    │   Your Standup                           │
+    │                                          │
+    ╰──────────────────────────────────────────╯
+    
+    ## Completed
+    
+    - Implemented JWT token refresh logic in the auth service
+    - Fixed race condition in WebSocket reconnection handler
+    - Updated API rate limiting middleware to return proper 429 status codes
+    
+    ## In Progress
+    
+    - Migrating user preferences to the new settings schema (PROJ-234)
+    - Reviewing PR #42 for the dashboard CSV export feature
+    
+    ## Blockers
+    
+    - Waiting on DevOps team for staging environment Redis upgrade
+    
+    ────────────────────────────────────────────
+    
+    commits: 5  │  days: 1  │  PRs: 2  │  primary area: backend
+    
+    ✓ Copied to clipboard
+    ```
+  </Step>
+  
+  <Step title="Try different time ranges">
+    Look back further if you want to cover more work:
+    
+    ```bash
+    # Last 3 days
+    devdaily standup --days 3
+    
+    # Entire week
+    devdaily standup --days 7
+    ```
+  </Step>
+</Steps>
+
+<Tip>
+The standup is automatically copied to your clipboard. Just paste it into Slack, Teams, or your standup document!
+</Tip>
+
+## Generate a PR Description
+
+Create professional PR descriptions from your branch changes.
+
+<Steps>
+  <Step title="Create a feature branch and make some commits">
+    ```bash
+    git checkout -b feature/new-dashboard
+    # ... make your changes and commit ...
+    git add .
+    git commit -m "feat: add user dashboard with analytics"
+    ```
+  </Step>
+  
+  <Step title="Generate a PR description">
+    ```bash
+    devdaily pr
+    ```
+    
+    Or use the short alias:
+    ```bash
+    dd pr
+    ```
+    
+    DevDaily will:
+    1. Analyze your branch commits compared to the base branch
+    2. Extract ticket IDs from branch name and commits
+    3. Detect and use your PR template (if you have one)
+    4. Generate a comprehensive PR description
+  </Step>
+  
+  <Step title="Review and choose an action">
+    Example PR output:
+    
+    ```markdown
+    ╭──────────────────────────────────────────╮
+    │                                          │
+    │   PR Description Generator               │
+    │                                          │
+    ╰──────────────────────────────────────────╯
+    
+    Generated PR Description
+    ────────────────────────────────────────────
+    
+    # feat: add user dashboard with analytics
+    
+    ## Description
+    
+    - Added user dashboard with real-time analytics
+    - Implemented chart components using Recharts
+    - Added data export functionality (CSV/JSON)
+    
+    ## Type of Change
+    
+    - [x] New feature
+    - [ ] Bug fix
+    
+    ## Testing
+    
+    - Added unit tests for dashboard components
+    - Manual testing against staging environment
+    
+    ────────────────────────────────────────────
+    
+    ? What would you like to do?
+      ❯ Copy to clipboard
+        Create PR on GitHub
+        Create draft PR
+        Configure labels & reviewers
+        Exit
+    ```
+  </Step>
+  
+  <Step title="Create the PR directly (optional)">
+    Skip the menu and create the PR immediately:
+    
+    ```bash
+    # Create a regular PR
+    devdaily pr --create
+    
+    # Create a draft PR
+    devdaily pr --draft
+    
+    # Interactive mode with labels and reviewers
+    devdaily pr --interactive
+    ```
+  </Step>
+</Steps>
+
+<CodeGroup>
+```bash Copy to clipboard
+# Generate and copy
+devdaily pr
+# Select "Copy to clipboard" from the menu
+```
+
+```bash Create PR directly
+# Create PR on GitHub
+devdaily pr --create
+```
+
+```bash Create draft PR
+# Create as draft
+devdaily pr --draft
+```
+
+```bash Custom base branch
+# Compare against develop instead of main
+devdaily pr --base develop
+```
+</CodeGroup>
+
+## Generate a Weekly Summary
+
+Compile your weekly accomplishments across all commits, PRs, and tickets.
+
+<Steps>
+  <Step title="Generate this week's summary">
+    ```bash
+    devdaily week
+    ```
+    
+    Or use the short alias:
+    ```bash
+    dd w
+    ```
+  </Step>
+  
+  <Step title="Review the summary">
+    Example weekly output:
+    
+    ```markdown
+    ╭──────────────────────────────────────────╮
+    │                                          │
+    │   Weekly Summary                         │
+    │                                          │
+    ╰──────────────────────────────────────────╯
+    
+    ## Highlights
+    
+    Focused on backend auth improvements and API reliability this
+    week. Shipped JWT token refresh, fixed rate limiting, and
+    closed several long-standing bugs in the WebSocket layer.
+    
+    ## Key Accomplishments
+    
+    ### Features Shipped
+    - Implemented automatic JWT token refresh with configurable
+      expiry thresholds (PROJ-234)
+    - Added CSV export for dashboard analytics reports (PROJ-289)
+    - Built dark mode toggle for the settings page (#42)
+    
+    ### Bug Fixes
+    - Fixed API rate limiting to return HTTP 429 instead of 500
+    - Resolved race condition in WebSocket reconnection handler
+    - Fixed login page crash on mobile Safari (PROJ-201)
+    
+    ### Technical Improvements
+    - Refactored user service to use repository pattern
+    - Added integration test suite for auth middleware
+    - Updated CI pipeline to run tests in parallel
+    
+    ## Stats
+    
+    23 commits │ 4 PRs merged │ 1 PR open │ 3 tickets closed
+    
+    ────────────────────────────────────────────
+    
+    ✓ Copied to clipboard
+    ```
+  </Step>
+  
+  <Step title="Try different time ranges">
+    ```bash
+    # Last week
+    devdaily week --last
+    
+    # Specific date range
+    devdaily week --from 2025-01-01 --to 2025-01-07
+    
+    # All projects (cross-repo summary)
+    devdaily week --all-projects
+    ```
+  </Step>
+</Steps>
+
+## Essential Commands Cheat Sheet
+
+Here are the most common commands you'll use daily:
+
+<CodeGroup>
+```bash Standup Commands
+# Today's standup
+dd s
+
+# Last 3 days
+dd standup --days 3
+
+# Send to Slack
+dd standup --send
+
+# Slack format
+dd standup --format slack
+
+# Include specific ticket
+dd standup --ticket PROJ-123
+```
+
+```bash PR Commands
+# Generate PR description
+dd pr
+
+# Create PR on GitHub
+dd pr --create
+
+# Draft PR
+dd pr --draft
+
+# Against develop branch
+dd pr --base develop
+
+# Interactive mode
+dd pr --interactive
+```
+
+```bash Weekly Commands
+# This week
+dd w
+
+# Last week
+dd week --last
+
+# All projects
+dd week --all-projects
+
+# Save to journal
+dd week --save
+
+# JSON format
+dd week --json
+```
+
+```bash Context & Search
+# Where did I leave off?
+dd context
+
+# AI summary
+dd context --ai
+
+# Search for "auth"
+dd recall "auth"
+
+# Search by file
+dd recall --file src/auth.ts
+```
+</CodeGroup>
+
+## Output Formats
+
+DevDaily supports multiple output formats for different workflows:
+
+<Tabs>
+  <Tab title="Markdown">
+    Default format, perfect for GitHub, Notion, or documentation:
+    
+    ```bash
+    devdaily standup --format markdown
+    ```
+  </Tab>
+  
+  <Tab title="Slack">
+    Formatted with Slack's markdown syntax:
+    
+    ```bash
+    devdaily standup --format slack
+    ```
+    
+    Output:
+    ```
+    *Completed*
+    
+    • Implemented JWT token refresh logic
+    • Fixed race condition in WebSocket handler
+    
+    *In Progress*
+    
+    • Migrating user preferences schema (PROJ-234)
+    ```
+  </Tab>
+  
+  <Tab title="Plain Text">
+    Clean text without formatting:
+    
+    ```bash
+    devdaily standup --format plain
+    ```
+    
+    Output:
+    ```
+    Completed:
+    
+    • Implemented JWT token refresh logic
+    • Fixed race condition in WebSocket handler
+    
+    In Progress:
+    
+    • Migrating user preferences schema (PROJ-234)
+    ```
+  </Tab>
+  
+  <Tab title="JSON">
+    Machine-readable for automation:
+    
+    ```bash
+    devdaily standup --format json
+    ```
+    
+    Output:
+    ```json
+    {
+      "generatedAt": "2025-07-14T09:30:00.000Z",
+      "meta": {
+        "commits": 5,
+        "prs": 2,
+        "days": 1
+      },
+      "sections": [
+        {
+          "heading": "Completed",
+          "items": [
+            "Implemented JWT token refresh logic"
+          ]
+        }
+      ]
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Common Options
+
+These flags work across most commands:
+
+| Flag | Description | Example |
+|------|-------------|----------|
+| `--format` | Output format (markdown, slack, plain, json) | `dd s --format slack` |
+| `--no-copy` | Don't copy to clipboard | `dd pr --no-copy` |
+| `--debug` | Show full prompt and context | `dd s --debug` |
+| `--days <n>` | Look back N days | `dd s --days 3` |
+| `--send` | Send to Slack/Discord | `dd s --send` |
+
+## Next Steps
+
+Now that you've mastered the basics, explore more advanced features:
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="gear" href="/configuration/overview">
+    Customize DevDaily to match your workflow
+  </Card>
+  
+  <Card title="Commands Reference" icon="terminal" href="/cli/standup">
+    Complete reference for all commands and options
+  </Card>
+  
+  <Card title="Context & Memory" icon="brain" href="/features/context-recovery">
+    Learn about auto-snapshots and work journaling
+  </Card>
+  
+  <Card title="Integrations" icon="puzzle-piece" href="/configuration/project-management">
+    Connect Jira, Linear, Slack, and Discord
+  </Card>
+</CardGroup>
+
+## Tips & Tricks
+
+<Tip>
+**Use aliases for speed:**
+- `dd s` = standup
+- `dd pr` = PR description  
+- `dd w` = weekly summary
+- `dd ctx` = context recovery
+</Tip>
+
+<Tip>
+**Configure defaults in `.devdaily.json`:**
+```json
+{
+  "standup": { "defaultDays": 1 },
+  "pr": { "defaultBase": "develop" },
+  "output": { "format": "slack" }
+}
+```
+</Tip>
+
+<Tip>
+**Send standups to Slack automatically:**
+```bash
+# Set up webhook once
+dd init --notifications
+
+# Then send with --send flag
+dd standup --send
+```
+</Tip>
+
+## Troubleshooting
+
+### No commits found
+
+**Problem:** `No commits or PRs found in the last 1 day(s)`
+
+**Solution:**
+```bash
+# Increase the time range
+devdaily standup --days 3
+
+# Or check if you're filtering by author
+devdaily standup --author your.email@example.com
+```
+
+### GitHub Copilot CLI not working
+
+**Problem:** `GitHub Copilot CLI not found`
+
+**Solution:**
+```bash
+# Install the extension
+gh extension install github/gh-copilot
+
+# Verify it works
+gh copilot --version
+```
+
+### Not in a git repository
+
+**Problem:** `Not a git repository`
+
+**Solution:**
+```bash
+# Navigate to a git repository
+cd /path/to/your/project
+
+# Or initialize a new repo
+git init
+```
+
+### Webhook test fails
+
+**Problem:** Slack/Discord webhook not working
+
+**Solution:**
+```bash
+# Reconfigure webhooks
+devdaily init --notifications
+
+# Test the webhook
+devdaily standup --test-webhook
+```
+
+## Get Help
+
+Need more help?
+
+<CardGroup cols={2}>
+  <Card title="Run Diagnostics" icon="stethoscope">
+    ```bash
+    devdaily doctor
+    ```
+    Checks all prerequisites and shows their status
+  </Card>
+  
+  <Card title="Command Help" icon="circle-question">
+    ```bash
+    devdaily --help
+    devdaily standup --help
+    ```
+    Shows all available options for any command
+  </Card>
+</CardGroup>

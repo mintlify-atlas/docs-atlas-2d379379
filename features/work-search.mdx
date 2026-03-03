@@ -1,0 +1,545 @@
+---
+title: Work Search & Recall
+description: Search your work journal to find when you last worked on features, files, or tickets
+---
+
+The recall command lets you search through your work journal to answer questions like "When did I last work on the auth feature?" or "What commits touched this file?"
+
+## Quick Start
+
+Search your work history:
+
+```bash
+devdaily recall "authentication"
+```
+
+Search for a specific file:
+
+```bash
+devdaily recall --file src/auth.ts
+```
+
+Get an AI summary of search results:
+
+```bash
+devdaily recall "login page" --ai
+```
+
+## How It Works
+
+<Steps>
+  <Step title="Query Input">
+    Accept a search query, file path, or tag to search for in your journal.
+  </Step>
+  
+  <Step title="Journal Search">
+    Search through saved snapshots for matches in commits, PRs, branches, files, notes, and tags.
+  </Step>
+  
+  <Step title="Rank Results">
+    Score and rank results by relevance, showing the most relevant entries first.
+  </Step>
+  
+  <Step title="Display Matches">
+    Show matching snapshots with context, highlighting matched text and showing match reasons.
+  </Step>
+  
+  <Step title="AI Summary (Optional)">
+    Generate a concise summary answering "What did I do related to X?"
+  </Step>
+</Steps>
+
+<Note>
+  Recall requires journal snapshots. Run `devdaily snapshot` regularly to build your searchable work history.
+</Note>
+
+## Command Syntax
+
+```bash
+devdaily recall [query...] [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `[query...]` | Search keywords (e.g., "auth", "login page", "PROJ-123") |
+
+### Search Options
+
+| Option | Description | Default |
+|--------|-------------|----------|
+| `-p, --project <id>` | Filter by project identifier | All projects |
+| `--from <date>` | Start date for range (YYYY-MM-DD) | 90 days ago |
+| `--to <date>` | End date for range (YYYY-MM-DD) | Today |
+| `-d, --days <number>` | Search last N days | `90` |
+| `-t, --tag <tags...>` | Filter by tags | - |
+| `-f, --file <path>` | Search for specific file path | - |
+| `-l, --limit <number>` | Max results to show | `10` |
+
+### Output Options
+
+| Option | Description |
+|--------|-------------|
+| `--ai` | Generate AI-powered summary of results |
+| `--no-copy` | Don't copy AI summary to clipboard |
+| `--json` | Output results as JSON |
+| `--debug` | Show debug output |
+
+## Search Types
+
+<Tabs>
+  <Tab title="Text Search">
+    Search across commits, PRs, branches, notes, and more:
+    
+    ```bash
+    # Search for any mention of "authentication"
+    devdaily recall authentication
+    
+    # Search for a phrase
+    devdaily recall "login page redesign"
+    
+    # Search for a ticket ID
+    devdaily recall PROJ-123
+    ```
+    
+    Searches in:
+    - Commit messages
+    - Branch names
+    - PR titles
+    - Ticket IDs and titles
+    - File paths
+    - Notes
+    - Tags
+  </Tab>
+  
+  <Tab title="File Search">
+    Find when you last worked on a specific file:
+    
+    ```bash
+    # Full path
+    devdaily recall --file src/components/Auth.tsx
+    
+    # Partial path
+    devdaily recall --file Auth.tsx
+    
+    # Wildcards work in paths
+    devdaily recall --file "src/auth*"
+    ```
+    
+    Shows:
+    - Dates the file was modified
+    - Commits that touched the file
+    - Specific changes per commit
+  </Tab>
+  
+  <Tab title="Tag Search">
+    Filter by tags you've added to snapshots:
+    
+    ```bash
+    # Single tag
+    devdaily recall --tag bugfix
+    
+    # Multiple tags
+    devdaily recall --tag feature --tag backend
+    ```
+    
+    Tags are added via:
+    ```bash
+    devdaily snapshot --tag feature --tag api
+    ```
+  </Tab>
+  
+  <Tab title="Combined Search">
+    Combine search criteria:
+    
+    ```bash
+    # Text + project filter
+    devdaily recall "oauth" --project my-api
+    
+    # Text + date range
+    devdaily recall "refactor" --from 2024-01-01 --to 2024-01-31
+    
+    # File + days
+    devdaily recall --file auth.ts --days 30
+    ```
+  </Tab>
+</Tabs>
+
+## Search Results
+
+### Example Output
+
+```
+🔍 Recall — 5 result(s) for "authentication"
+
+  1. 2024-01-18 (today)  📂 my-api  🌿 feature/oauth2  ●●●●●●●●●○
+     Matched: commit message, branch name, ticket PROJ-123
+     a3f2c91 Implement OAuth2 token refresh endpoint
+     b7e1d42 Add authentication middleware
+     ... +3 more commit(s)
+     ○ PR #45 Add OAuth2 authentication support
+
+  2. 2024-01-15  📂 my-api  🌿 fix/auth-redirect  ●●●●●●●○○○
+     Matched: commit message, file: src/auth.ts
+     c9d4e21 Fix authentication redirect after login
+     d2f8a33 Update auth error handling
+     5 files +123/-45
+
+  3. 2024-01-10  📂 dashboard  🌿 feature/sso  ●●●●●○○○○○
+     Matched: commit message, note
+     e5b3c44 Add SSO authentication flow
+     📌 Started work on single sign-on authentication
+     tags: feature, auth
+
+  ...
+
+Searched 156 snapshots across 3 project(s) from 2023-10-20 to 2024-01-18
+
+Tip: Add --ai for an AI-powered summary of these results
+```
+
+### Result Components
+
+**Header:**
+- Date (with "today" indicator)
+- Project name
+- Branch name
+- Relevance score (●●●●●)
+
+**Match Reasons:**
+- Where the query matched (commit message, branch, file, etc.)
+
+**Commits:**
+- Relevant commits (highlighted if matching)
+- Remaining commit count
+
+**PRs:**
+- Relevant pull requests with state indicators
+
+**Notes:**
+- Matching notes with 📌 indicator
+
+**Diff Stats:**
+- Files changed, lines added/removed
+
+**Tags:**
+- Associated tags
+
+## File History View
+
+Special view for file-specific searches:
+
+```bash
+devdaily recall --file src/auth.ts
+```
+
+```
+📄 File History: src/auth.ts
+
+  │ 2024-01-18 (today)
+  │   a3f2c91 Refactor auth middleware [src/auth.ts]
+  │   b7e1d42 Add token validation [src/auth.ts, src/api/tokens.ts]
+  │
+  │ 2024-01-15
+  │   c9d4e21 Fix auth redirect bug [src/auth.ts]
+  │   d2f8a33 Update error messages [src/auth.ts]
+  │   e5b3c44 Add auth tests [src/auth.ts, tests/auth.test.ts]
+  │   ... +2 more commits
+  │
+  │ 2024-01-10
+  │   f1a2b34 Initial auth implementation [src/auth.ts]
+  ╵
+
+Showing 10 of 15 days. Use --limit to see more.
+```
+
+## AI-Powered Summaries
+
+Get a narrative summary of search results:
+
+```bash
+devdaily recall "authentication" --ai
+```
+
+### Example AI Summary
+
+```
+╭─────────────────────────────────────────────────╮
+│ 🔍 AI Summary: "authentication"                 │
+├─────────────────────────────────────────────────┤
+│                                                 │
+│ **Summary**                                     │
+│ Authentication work spans 3 weeks across API    │
+│ and dashboard projects. Started with OAuth2     │
+│ integration (PROJ-123), then added SSO support, │
+│ and recently fixed redirect bugs.               │
+│                                                 │
+│ **Timeline**                                    │
+│ - Jan 10: SSO implementation began (dashboard)  │
+│ - Jan 12-15: OAuth2 provider setup (API)        │
+│ - Jan 15: Fixed auth redirect bug               │
+│ - Jan 16-18: Token refresh and middleware       │
+│                                                 │
+│ **Key details**                                 │
+│ - Branch: feature/oauth2-integration            │
+│ - PR #45: OAuth2 support (in review)            │
+│ - Files: src/auth.ts, src/api/oauth.ts          │
+│ - Tickets: PROJ-123, PROJ-128                   │
+│                                                 │
+│ **Current state**                               │
+│ OAuth2 work is in review. SSO implementation    │
+│ complete and merged. Auth system is now more    │
+│ robust with better error handling.              │
+╰─────────────────────────────────────────────────╯
+```
+
+The AI summary:
+- Synthesizes all matching snapshots
+- Creates a chronological narrative
+- Highlights key branches, PRs, and files
+- Determines current state (done/in-progress/abandoned)
+
+<Tip>
+  AI summaries are automatically copied to clipboard (disable with `--no-copy`).
+</Tip>
+
+## Search Filters
+
+### By Project
+
+```bash
+# Search only in my-api project
+devdaily recall "refactor" --project my-api
+```
+
+### By Date Range
+
+```bash
+# Last 30 days
+devdaily recall "bugfix" --days 30
+
+# Specific month
+devdaily recall "feature" --from 2024-01-01 --to 2024-01-31
+
+# Specific date
+devdaily recall "deploy" --from 2024-01-15 --to 2024-01-15
+```
+
+### By Tags
+
+```bash
+# All work tagged as bugfix
+devdaily recall --tag bugfix
+
+# Multiple tags (AND logic)
+devdaily recall --tag feature --tag backend
+```
+
+### Result Limit
+
+```bash
+# Show top 5 results
+devdaily recall "api" --limit 5
+
+# Show 20 results
+devdaily recall "test" --limit 20
+```
+
+## JSON Output
+
+For automation and integrations:
+
+```bash
+devdaily recall "feature" --json
+```
+
+```json
+[
+  {
+    "date": "2024-01-18",
+    "projectId": "my-api",
+    "branch": "feature/oauth2",
+    "score": 9,
+    "matchReasons": ["commit message", "branch name", "ticket PROJ-123"],
+    "commits": 5,
+    "prs": 1,
+    "tags": ["feature", "auth"],
+    "notes": null
+  },
+  ...
+]
+```
+
+## Use Cases
+
+### Finding Past Work
+
+```bash
+# When did I last touch the auth system?
+devdaily recall "authentication" --ai
+
+# What did I do related to PROJ-123?
+devdaily recall PROJ-123
+```
+
+### File History
+
+```bash
+# When was this file last modified?
+devdaily recall --file src/components/LoginForm.tsx
+
+# All work on auth files
+devdaily recall --file "src/auth"
+```
+
+### Project Review
+
+```bash
+# What features were added this month?
+devdaily recall "feature" --from 2024-01-01 --to 2024-01-31 --ai
+
+# All bugfixes in a project
+devdaily recall --tag bugfix --project my-api
+```
+
+### Context for Discussions
+
+```bash
+# Prepare for code review discussion
+devdaily recall "refactor database" --ai
+
+# What work was done on the API?
+devdaily recall --project api --days 30 --ai
+```
+
+## Match Highlighting
+
+Search terms are highlighted in results:
+
+```bash
+devdaily recall "authentication"
+```
+
+```
+a3f2c91 Implement OAuth2 authentication middleware
+                      ^^^^^^^^^^^^^  (highlighted)
+```
+
+## Example Workflows
+
+### Quick File Check
+
+```bash
+# Fast file history lookup
+devdaily recall --file auth.ts --limit 5
+```
+
+### Deep Investigation
+
+```bash
+# Full AI-powered analysis
+devdaily recall "performance optimization" --days 90 --ai
+```
+
+### Tag-Based Review
+
+```bash
+# All feature work this quarter
+devdaily recall --tag feature --from 2024-01-01 --to 2024-03-31
+```
+
+### Project Timeline
+
+```bash
+# Export project history
+devdaily recall --project my-api --json > project-history.json
+```
+
+## Help and Usage
+
+Running `devdaily recall` without arguments shows help and journal stats:
+
+```
+🔍 Recall — Search Your Work History
+
+  Search across all your journal snapshots to find when you
+  last worked on something, touched a file, or used a branch.
+
+  Usage:
+    devdaily recall <query>              Search by keyword
+    devdaily recall "auth feature"       Search for a phrase
+    devdaily recall PROJ-123             Search for a ticket
+    devdaily recall --file src/auth.ts   Search for a file
+    devdaily recall --tag bugfix         Search by tag
+    devdaily recall login --ai           Get AI summary
+
+  Your journal: 156 snapshots across 3 project(s), 42 day(s)
+  Range: 2023-10-15 → 2024-01-18
+```
+
+## Configuration
+
+Customize in `.devdaily.json`:
+
+```json
+{
+  "output": {
+    "copyToClipboard": true
+  }
+}
+```
+
+## Troubleshooting
+
+<Accordion title="No matches found">
+  If you see "No matches found for X":
+  
+  - Try a broader search term
+  - Increase lookback: `--days 180`
+  - Search all projects (remove `--project` filter)
+  - Ensure you've been taking snapshots: `devdaily snapshot --list`
+</Accordion>
+
+<Accordion title="Journal is empty">
+  Start building your journal:
+  
+  ```bash
+  # Take a snapshot now
+  devdaily snapshot
+  
+  # Enable auto-snapshots (enabled by default)
+  devdaily standup  # Creates snapshot
+  devdaily pr       # Creates snapshot
+  ```
+</Accordion>
+
+<Accordion title="Search is too slow">
+  Reduce search scope:
+  
+  ```bash
+  # Limit days
+  devdaily recall "query" --days 30
+  
+  # Limit results
+  devdaily recall "query" --limit 5
+  
+  # Filter by project
+  devdaily recall "query" --project my-api
+  ```
+</Accordion>
+
+<Accordion title="AI summary fails">
+  Install GitHub Copilot CLI:
+  
+  ```bash
+  gh extension install github/gh-copilot
+  ```
+</Accordion>
+
+## Related Commands
+
+- [`devdaily snapshot`](/cli/snapshot) - Take and manage work snapshots
+- [`devdaily context`](/features/context-recovery) - Recover work context
+- [`devdaily week`](/features/weekly-summaries) - Generate weekly summaries
+- [`devdaily standup`](/features/standup) - Generate daily standups

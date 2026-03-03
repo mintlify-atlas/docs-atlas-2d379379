@@ -1,0 +1,514 @@
+---
+title: System Diagnostics
+description: Use the devdaily doctor command to diagnose and fix system setup issues automatically
+---
+
+The `devdaily doctor` command checks your system setup and helps diagnose issues automatically.
+
+## Running Diagnostics
+
+### Basic Check
+
+Run a comprehensive system check:
+
+```bash
+devdaily doctor
+```
+
+This will verify:
+- Node.js version (requires >= 18)
+- Git installation
+- GitHub CLI (gh) installation
+- GitHub authentication status
+- GitHub Copilot CLI availability
+
+### Sample Output
+
+```bash
+╭─────────────────────────────╮
+│      System Check           │
+╰─────────────────────────────╯
+
+🔍 Prerequisites
+
+  ✓ Node.js        v20.10.0
+  ✓ Git            git version 2.42.0
+  ✓ GitHub CLI     gh version 2.40.0
+  ✓ GitHub Auth    Authenticated
+  ✓ Copilot CLI    1.0.0
+
+✓ All checks passed! DevDaily is ready to use.
+```
+
+## Understanding Check Results
+
+### Status Indicators
+
+<Accordion title="✓ OK - Component is working correctly">
+
+The component is installed and configured correctly. No action needed.
+
+**Example:**
+```bash
+✓ Node.js        v20.10.0
+```
+
+</Accordion>
+
+<Accordion title="⚠ Warning - Component works but needs attention">
+
+The component is functional but has non-critical issues.
+
+**Example:**
+```bash
+⚠ Copilot CLI    Using deprecated gh extension. Upgrade to new CLI.
+                 Fix: Run: brew install copilot-cli
+```
+
+**What this means:**
+- You're using the older `gh copilot` extension instead of the standalone CLI
+- DevDaily will still work, but upgrading is recommended
+
+</Accordion>
+
+<Accordion title="✗ Error - Component missing or broken">
+
+The component is missing or misconfigured and must be fixed.
+
+**Example:**
+```bash
+✗ Copilot CLI    Not found
+                 Fix: Run: brew install copilot-cli
+```
+
+**What this means:**
+- The component is required for DevDaily to function
+- Follow the suggested fix command to resolve
+
+</Accordion>
+
+## Automatic Fixes
+
+### Using --fix Flag
+
+DevDaily can attempt to fix some issues automatically:
+
+```bash
+devdaily doctor --fix
+```
+
+### What Gets Fixed Automatically
+
+<Accordion title="GitHub Authentication">
+
+If GitHub CLI is not authenticated, doctor will run:
+
+```bash
+gh auth login
+```
+
+You'll be prompted to authenticate via browser or token.
+
+**Output:**
+```bash
+Attempting automatic fixes...
+
+  → Running: gh auth login
+  ✓ Authenticated successfully
+```
+
+</Accordion>
+
+<Accordion title="Copilot CLI Installation (macOS/Linux)">
+
+If Copilot CLI is missing and you have Homebrew, doctor will run:
+
+```bash
+brew install copilot-cli
+```
+
+**Output:**
+```bash
+Attempting automatic fixes...
+
+  → Running: brew install copilot-cli
+  ✓ Copilot CLI installed
+```
+
+<Note>
+Automatic installation requires Homebrew on macOS/Linux. For other systems, follow the manual installation instructions.
+</Note>
+
+</Accordion>
+
+## Detailed Checks
+
+### Node.js Check
+
+<Accordion title="Node.js version validation">
+
+**What's checked:**
+- Node.js is installed
+- Version is >= 18.0.0
+
+**Possible results:**
+
+```bash
+# Success
+✓ Node.js        v20.10.0
+
+# Version too old
+✗ Node.js        v16.20.0 (requires >= 18)
+                 Fix: Install Node.js 18+ from https://nodejs.org
+
+# Not installed
+✗ Node.js        Not found
+                 Fix: Install Node.js from https://nodejs.org
+```
+
+**Manual fix:**
+```bash
+# Using nvm
+nvm install 18
+nvm use 18
+
+# Or download from nodejs.org
+open https://nodejs.org
+```
+
+</Accordion>
+
+### Git Check
+
+<Accordion title="Git installation validation">
+
+**What's checked:**
+- Git is installed and accessible
+
+**Possible results:**
+
+```bash
+# Success
+✓ Git            git version 2.42.0
+
+# Not installed
+✗ Git            Not found
+                 Fix: Install Git from https://git-scm.com
+```
+
+**Manual fix:**
+```bash
+# macOS
+brew install git
+
+# Ubuntu/Debian
+sudo apt-get install git
+
+# Fedora/RHEL
+sudo dnf install git
+```
+
+</Accordion>
+
+### GitHub CLI Check
+
+<Accordion title="GitHub CLI installation and authentication">
+
+**What's checked:**
+- GitHub CLI (`gh`) is installed
+- You're authenticated with GitHub
+
+**Possible results:**
+
+```bash
+# All good
+✓ GitHub CLI     gh version 2.40.0
+✓ GitHub Auth    Authenticated
+
+# Not installed
+✗ GitHub CLI     Not found
+                 Fix: Install from https://cli.github.com
+⚠ GitHub Auth    Requires GitHub CLI
+
+# Installed but not authenticated
+✓ GitHub CLI     gh version 2.40.0
+✗ GitHub Auth    Not authenticated
+                 Fix: Run: gh auth login
+```
+
+**Manual fix:**
+```bash
+# Install GitHub CLI
+brew install gh
+
+# Authenticate
+gh auth login
+```
+
+</Accordion>
+
+### Copilot CLI Check
+
+<Accordion title="GitHub Copilot CLI detection">
+
+**What's checked:**
+- New standalone Copilot CLI (`copilot` command)
+- Legacy gh extension (`gh copilot`)
+
+**Possible results:**
+
+```bash
+# New CLI (preferred)
+✓ Copilot CLI    1.0.0
+
+# Legacy extension (still works)
+⚠ Copilot CLI    Using deprecated gh extension. Upgrade to new CLI.
+                 Fix: Run: brew install copilot-cli
+
+# Not installed
+✗ Copilot CLI    Not found
+                 Fix: Run: brew install copilot-cli
+
+# GitHub CLI not installed
+⚠ Copilot CLI    Requires GitHub CLI
+```
+
+**Manual fix:**
+```bash
+# Install new standalone CLI (recommended)
+brew install copilot-cli
+
+# Or install as gh extension (legacy)
+gh extension install github/gh-copilot
+```
+
+</Accordion>
+
+## Quick Setup Guide
+
+When doctor detects issues, it displays a quick setup guide:
+
+```bash
+📋 Quick Setup Guide
+
+  1. Install GitHub CLI: brew install gh
+  2. Authenticate: gh auth login
+  3. Install Copilot CLI: brew install copilot-cli
+  4. Set up DevDaily: devdaily init
+```
+
+Follow these steps in order to get DevDaily fully configured.
+
+## Common Diagnostic Scenarios
+
+### Fresh Installation
+
+<Accordion title="Setting up DevDaily for the first time">
+
+**Run:**
+```bash
+devdaily doctor
+```
+
+**Expected output:**
+```bash
+✗ GitHub CLI     Not found
+✗ GitHub Auth    Requires GitHub CLI
+✗ Copilot CLI    Requires GitHub CLI
+
+3 issue(s) found
+
+Run `devdaily doctor --fix` to attempt automatic fixes
+```
+
+**Fix:**
+```bash
+# Automatic (if you have Homebrew)
+devdaily doctor --fix
+
+# Manual
+brew install gh
+gh auth login
+brew install copilot-cli
+devdaily doctor  # Verify
+```
+
+</Accordion>
+
+### Copilot Not Working
+
+<Accordion title="AI generation fails">
+
+**Symptoms:**
+- `devdaily standup` fails with "Copilot CLI not found"
+- AI-powered features don't work
+
+**Diagnose:**
+```bash
+devdaily doctor
+```
+
+**Look for:**
+```bash
+✗ Copilot CLI    Not found
+```
+
+**Fix:**
+```bash
+# Automatic
+devdaily doctor --fix
+
+# Manual
+brew install copilot-cli
+copilot --version  # Verify
+```
+
+</Accordion>
+
+### GitHub Features Not Working
+
+<Accordion title="PR creation and ticket linking fails">
+
+**Symptoms:**
+- Can't create PRs with `devdaily pr --create`
+- GitHub Issues integration doesn't work
+
+**Diagnose:**
+```bash
+devdaily doctor
+```
+
+**Look for:**
+```bash
+✗ GitHub Auth    Not authenticated
+```
+
+**Fix:**
+```bash
+# Automatic
+devdaily doctor --fix
+
+# Manual
+gh auth login
+gh auth status  # Verify
+```
+
+</Accordion>
+
+### After System Upgrade
+
+<Accordion title="DevDaily stopped working after OS update">
+
+**Run a full check:**
+```bash
+devdaily doctor
+```
+
+Common issues after system upgrades:
+- Node.js version changed
+- Command line tools need reinstallation
+- Authentication tokens expired
+
+**Fix:**
+```bash
+# Re-authenticate
+gh auth login
+gh auth refresh
+
+# Reinstall if needed
+brew reinstall gh copilot-cli
+
+# Verify
+devdaily doctor
+```
+
+</Accordion>
+
+## Interpreting Results
+
+### All Checks Passed
+
+```bash
+✓ All checks passed! DevDaily is ready to use.
+```
+
+Your system is fully configured. You can start using DevDaily:
+
+```bash
+devdaily init     # Set up aliases and configuration
+devdaily standup  # Generate your first standup
+```
+
+### Issues Found
+
+```bash
+3 issue(s) found
+
+Run `devdaily doctor --fix` to attempt automatic fixes
+```
+
+Try automatic fixes first:
+
+```bash
+devdaily doctor --fix
+```
+
+If automatic fixes don't work, follow the manual fix instructions for each failing check.
+
+## Advanced Diagnostics
+
+### Check Configuration
+
+Verify your configuration file:
+
+```bash
+devdaily config --path
+```
+
+### Verify Git Repository
+
+```bash
+git status
+git log --oneline -5
+```
+
+### Test Copilot Directly
+
+```bash
+# New CLI
+copilot --version
+
+# Legacy extension
+gh copilot --version
+```
+
+### Check Journal Storage
+
+```bash
+devdaily snapshot --stats
+```
+
+## Continuous Monitoring
+
+Run `devdaily doctor` periodically to catch issues early:
+
+```bash
+# Check before important work
+devdaily doctor
+
+# After installing updates
+brew upgrade && devdaily doctor
+
+# As part of onboarding
+devdaily doctor && devdaily init
+```
+
+<Note>
+Run `devdaily doctor` whenever DevDaily behaves unexpectedly. It can catch most configuration issues automatically.
+</Note>
+
+## Related Resources
+
+- [Common Issues](/troubleshooting/common-issues) - Solutions for specific error messages
+- [Configuration](/configuration/overview) - Configure DevDaily settings
+- [Installation](/installation) - Initial setup guide

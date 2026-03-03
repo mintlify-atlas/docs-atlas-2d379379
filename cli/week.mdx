@@ -1,0 +1,170 @@
+---
+title: "devdaily week"
+description: "Generate weekly work summaries from commits, PRs, tickets, and journal history"
+---
+
+## Description
+
+Generates comprehensive weekly work summaries by analyzing git history, pull requests, tickets, and journal snapshots. Supports both single-project and cross-project summaries.
+
+## Usage
+
+```bash
+devdaily week [options]
+```
+
+## Options
+
+<ParamField path="-l, --last" type="boolean">
+  Generate summary for last week instead of current week
+</ParamField>
+
+<ParamField path="-s, --start <date>" type="string">
+  Custom start date in YYYY-MM-DD format
+</ParamField>
+
+<ParamField path="--from <date>" type="string">
+  Start date for custom range (YYYY-MM-DD)
+</ParamField>
+
+<ParamField path="--to <date>" type="string">
+  End date for custom range (YYYY-MM-DD)
+</ParamField>
+
+<ParamField path="-w, --weeks-ago <number>" type="string">
+  Number of weeks ago (e.g., 2 = two weeks back)
+</ParamField>
+
+<ParamField path="--all-projects" type="boolean">
+  Include all tracked projects from journal (cross-project summary)
+</ParamField>
+
+<ParamField path="-p, --project <id>" type="string">
+  Filter by specific project identifier
+</ParamField>
+
+<ParamField path="--no-tickets" type="boolean">
+  Skip fetching closed tickets/issues
+</ParamField>
+
+<ParamField path="--no-prs" type="boolean">
+  Skip fetching PR context
+</ParamField>
+
+<ParamField path="--no-journal" type="boolean">
+  Skip journal data (use only live git data)
+</ParamField>
+
+<ParamField path="--no-auto-snapshot" type="boolean">
+  Skip auto-saving a snapshot to the journal
+</ParamField>
+
+<ParamField path="--no-copy" type="boolean">
+  Do not copy to clipboard
+</ParamField>
+
+<ParamField path="--save" type="boolean">
+  Save the generated summary to the journal as an AI summary
+</ParamField>
+
+<ParamField path="--debug" type="boolean">
+  Show the full context and prompt sent to Copilot
+</ParamField>
+
+<ParamField path="--raw-context" type="boolean">
+  Output only the raw context block (no AI generation)
+</ParamField>
+
+<ParamField path="--json" type="boolean">
+  Output stats as JSON (no AI generation)
+</ParamField>
+
+## Examples
+
+### Current week summary
+
+```bash
+devdaily week
+```
+
+### Last week
+
+```bash
+devdaily week --last
+```
+
+### Custom date range
+
+```bash
+devdaily week --from 2024-01-01 --to 2024-01-07
+```
+
+### Two weeks ago
+
+```bash
+devdaily week --weeks-ago 2
+```
+
+### Cross-project summary
+
+```bash
+devdaily week --all-projects
+```
+
+### Save to journal
+
+```bash
+devdaily week --save
+```
+
+### JSON output for processing
+
+```bash
+devdaily week --json > weekly-stats.json
+```
+
+### Specific project only
+
+```bash
+devdaily week --project my-api
+```
+
+## Output Sections
+
+### Single-Project Mode
+
+- **Accomplishments** - Key work completed
+- **In Progress** - Active work and open PRs
+- **Key Metrics** - Lines changed, files touched, PRs merged
+- **Notable Items** - Breaking changes, features, refactors
+
+### Cross-Project Mode
+
+- **Week Overview** - High-level themes across projects
+- **Per-Project Highlights** - Summary for each project
+- **Cross-Cutting Themes** - Patterns across projects
+- **This Week in Numbers** - Aggregate statistics
+
+## Journal Integration
+
+The week command combines:
+
+1. **Live Git Data** - Current commits, PRs, and tickets
+2. **Journal History** - Saved snapshots from previous days
+
+This provides continuity and shows work progression over time.
+
+## Configuration
+
+Relevant config settings:
+
+- `git.defaultBranch` - Base branch for comparisons
+- `week.startDay` - Week start day (monday/sunday)
+- `output.copyToClipboard` - Auto-copy behavior
+- `output.showStats` - Display statistics
+
+## Requirements
+
+- Git repository (unless using `--all-projects`)
+- GitHub Copilot CLI (unless using `--json` or `--raw-context`)
+- Journal snapshots for historical context (optional)

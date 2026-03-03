@@ -1,0 +1,519 @@
+---
+title: Common Issues
+description: Solutions for common DevDaily problems including Copilot setup, git errors, clipboard issues, and webhook failures
+---
+
+This page covers the most common issues you might encounter when using DevDaily and how to resolve them.
+
+## GitHub Copilot CLI Not Found
+
+<Accordion title="Error: GitHub Copilot CLI not found">
+
+### Problem
+
+DevDaily requires GitHub Copilot CLI for AI-powered text generation. You may see this error:
+
+```bash
+Copilot CLI not found
+```
+
+### Solution
+
+DevDaily supports both the new standalone Copilot CLI and the legacy gh extension:
+
+**Option 1: Install the new Copilot CLI (recommended)**
+
+```bash
+brew install copilot-cli
+```
+
+**Option 2: Install the legacy gh extension**
+
+```bash
+gh extension install github/gh-copilot
+```
+
+### Verification
+
+Check your installation:
+
+```bash
+# For new CLI
+copilot --version
+
+# For legacy extension
+gh copilot --version
+```
+
+<Note>
+The new Copilot CLI is the preferred method. The gh extension is deprecated but still supported.
+</Note>
+
+</Accordion>
+
+## Not a Git Repository
+
+<Accordion title="Error: Not a git repository">
+
+### Problem
+
+DevDaily analyzes git history to generate summaries. If you're not in a git repository:
+
+```bash
+fatal: not a git repository (or any of the parent directories): .git
+```
+
+### Solution
+
+**Navigate to a git repository:**
+
+```bash
+cd /path/to/your/project
+devdaily standup
+```
+
+**Initialize a new git repository:**
+
+```bash
+git init
+git add .
+git commit -m "Initial commit"
+```
+
+<Warning>
+DevDaily requires an existing git repository with commit history to function.
+</Warning>
+
+</Accordion>
+
+## No Commits Found
+
+<Accordion title="No commits found for the specified time range">
+
+### Problem
+
+DevDaily can't find any commits matching your criteria:
+
+```bash
+No commits found in the last 1 day(s)
+```
+
+### Solutions
+
+**1. Increase the time range:**
+
+```bash
+devdaily standup --days 3
+devdaily standup --days 7
+```
+
+**2. Check author filter:**
+
+By default, DevDaily filters commits by the current git user. If commits were made by a different author:
+
+```bash
+# Check your git user
+git config user.name
+git config user.email
+
+# See all commits without author filter
+git log --all --since="1 day ago"
+```
+
+**3. Verify commit history exists:**
+
+```bash
+git log --oneline
+```
+
+**4. Check for recent commits:**
+
+```bash
+devdaily context --days 14
+```
+
+</Accordion>
+
+## Clipboard Issues
+
+<Accordion title="Failed to copy to clipboard">
+
+### Problem
+
+DevDaily can't copy output to your clipboard:
+
+```bash
+Failed to copy to clipboard
+```
+
+### Solutions
+
+**Linux: Install xclip or xsel**
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install xclip
+
+# Fedora/RHEL
+sudo dnf install xclip
+
+# Arch
+sudo pacman -S xclip
+```
+
+**macOS: Check permissions**
+
+Ensure your terminal has accessibility permissions:
+
+1. System Preferences → Security & Privacy → Privacy
+2. Select "Accessibility" from the left sidebar
+3. Grant permission to your terminal app (Terminal, iTerm2, etc.)
+
+**Workaround: Disable auto-copy**
+
+```bash
+devdaily standup --no-copy
+```
+
+Or set in configuration:
+
+```json
+{
+  "output": {
+    "copyToClipboard": false
+  }
+}
+```
+
+</Accordion>
+
+## Webhook Failures
+
+<Accordion title="Failed to send Slack/Discord notification">
+
+### Problem
+
+Webhook notifications fail to send:
+
+```bash
+Slack webhook URL not configured
+Failed to send Slack message: 401 Unauthorized
+Discord API error: 404 Not Found
+```
+
+### Solutions
+
+**1. Configure webhooks:**
+
+```bash
+devdaily init --notifications
+```
+
+This will prompt you to enter your webhook URLs.
+
+**2. Test webhook configuration:**
+
+```bash
+devdaily standup --test-webhook
+```
+
+**3. Verify webhook URLs:**
+
+Check your configuration file:
+
+```bash
+devdaily config --path
+```
+
+Webhook URLs should be stored in secrets file:
+
+- `~/.config/devdaily/secrets.json` (global)
+- `.devdaily.secrets.json` (project, git-ignored)
+
+**4. Common webhook errors:**
+
+- **401 Unauthorized**: Webhook URL is invalid or expired. Regenerate the webhook in Slack/Discord settings.
+- **404 Not Found**: Webhook has been deleted. Create a new webhook.
+- **400 Bad Request**: Message format issue. Check if special characters need escaping.
+
+**5. Reconfigure webhooks:**
+
+```bash
+devdaily init --notifications
+```
+
+<Warning>
+Never commit webhook URLs to version control. DevDaily automatically adds `.devdaily.secrets.json` to `.gitignore`.
+</Warning>
+
+</Accordion>
+
+## GitHub CLI Authentication
+
+<Accordion title="GitHub Auth not authenticated">
+
+### Problem
+
+GitHub CLI is installed but not authenticated:
+
+```bash
+GitHub Auth: Not authenticated
+```
+
+### Solution
+
+**Authenticate with GitHub:**
+
+```bash
+gh auth login
+```
+
+Follow the prompts to authenticate via browser or token.
+
+**Verify authentication:**
+
+```bash
+gh auth status
+```
+
+**Automatic fix:**
+
+```bash
+devdaily doctor --fix
+```
+
+</Accordion>
+
+## Node.js Version
+
+<Accordion title="Node.js version requirement">
+
+### Problem
+
+DevDaily requires Node.js 18 or higher:
+
+```bash
+Node.js: v16.20.0 (requires >= 18)
+```
+
+### Solution
+
+**Install Node.js 18+:**
+
+```bash
+# Using nvm (recommended)
+nvm install 18
+nvm use 18
+
+# Or download from nodejs.org
+open https://nodejs.org
+```
+
+**Verify version:**
+
+```bash
+node --version
+```
+
+</Accordion>
+
+## Git Hooks Not Working
+
+<Accordion title="Auto-snapshots not triggered on commit">
+
+### Problem
+
+Git hooks for auto-snapshots aren't triggering.
+
+### Solutions
+
+**1. Install git hooks:**
+
+```bash
+devdaily init --git-hooks
+```
+
+**2. Verify hooks are installed:**
+
+```bash
+cat .git/hooks/post-commit
+cat .git/hooks/post-checkout
+```
+
+You should see DevDaily commands in these files.
+
+**3. Check hook permissions:**
+
+```bash
+chmod +x .git/hooks/post-commit
+chmod +x .git/hooks/post-checkout
+```
+
+**4. Remove and reinstall:**
+
+```bash
+devdaily init --remove-hooks
+devdaily init --git-hooks
+```
+
+<Note>
+Git hooks are opt-in. DevDaily appends to existing hooks rather than overwriting them.
+</Note>
+
+</Accordion>
+
+## PR Creation Failures
+
+<Accordion title="Failed to create pull request">
+
+### Problem
+
+PR creation fails with various errors:
+
+```bash
+failed to create pull request
+no commits between base and head
+```
+
+### Solutions
+
+**1. Push your branch first:**
+
+```bash
+git push -u origin your-branch-name
+devdaily pr --create
+```
+
+**2. Verify base branch:**
+
+```bash
+# Check default branch
+devdaily pr --base main
+# or
+devdaily pr --base develop
+```
+
+**3. Ensure commits exist:**
+
+```bash
+git log main..HEAD
+```
+
+**4. Check GitHub CLI auth:**
+
+```bash
+gh auth status
+gh auth refresh
+```
+
+</Accordion>
+
+## Performance Issues
+
+<Accordion title="DevDaily is slow or times out">
+
+### Problem
+
+Commands take too long or timeout.
+
+### Solutions
+
+**1. Use light mode for snapshots:**
+
+```bash
+devdaily snapshot --light
+```
+
+This skips PR and ticket fetching.
+
+**2. Reduce time range:**
+
+```bash
+devdaily standup --days 1
+devdaily context --days 7
+```
+
+**3. Disable auto-snapshots:**
+
+In `.devdaily.json`:
+
+```json
+{
+  "journal": {
+    "autoSnapshot": false
+  }
+}
+```
+
+**4. Clean up old journal entries:**
+
+```bash
+devdaily snapshot --prune 90
+```
+
+This removes entries older than 90 days.
+
+</Accordion>
+
+## Configuration Issues
+
+<Accordion title="Configuration not being applied">
+
+### Problem
+
+Your configuration changes aren't taking effect.
+
+### Solutions
+
+**1. Check configuration file location:**
+
+```bash
+devdaily config --path
+```
+
+**2. Verify JSON syntax:**
+
+Ensure your `.devdaily.json` is valid JSON:
+
+```bash
+# macOS/Linux
+cat .devdaily.json | python -m json.tool
+
+# Or use an online validator
+```
+
+**3. Configuration precedence:**
+
+Local project config (`.devdaily.json`) overrides global config (`~/.config/devdaily/config.json`).
+
+**4. Reset to defaults:**
+
+Remove your config file and let DevDaily recreate it:
+
+```bash
+rm .devdaily.json
+devdaily init
+```
+
+</Accordion>
+
+## Still Having Issues?
+
+If you're still experiencing problems:
+
+1. **Run diagnostics:**
+   ```bash
+   devdaily doctor
+   ```
+
+2. **Check debug output:**
+   ```bash
+   devdaily standup --debug
+   ```
+
+3. **Report an issue:**
+   Visit [github.com/hempun10/devdaily/issues](https://github.com/hempun10/devdaily/issues)
+
+<Note>
+Most issues can be automatically diagnosed and fixed with `devdaily doctor --fix`.
+</Note>

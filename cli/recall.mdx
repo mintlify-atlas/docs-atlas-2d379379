@@ -1,0 +1,192 @@
+---
+title: "devdaily recall"
+description: "Search your work history - \"when did I last work on X?\""
+---
+
+## Description
+
+Searches your work journal to find when you last worked on something, touched a file, or used a branch. Supports text search, tag filtering, and file path lookup with optional AI-powered summaries.
+
+## Usage
+
+```bash
+devdaily recall [query...] [options]
+```
+
+## Arguments
+
+<ParamField path="query" type="string[]">
+  Search query (e.g., "auth", "login page", "PROJ-123"). Multiple words are joined into a single query.
+</ParamField>
+
+## Options
+
+<ParamField path="-p, --project <id>" type="string">
+  Filter by project identifier
+</ParamField>
+
+<ParamField path="--from <date>" type="string">
+  Start date for search range (YYYY-MM-DD)
+</ParamField>
+
+<ParamField path="--to <date>" type="string">
+  End date for search range (YYYY-MM-DD)
+</ParamField>
+
+<ParamField path="-d, --days <number>" type="string" default="90">
+  Search last N days
+</ParamField>
+
+<ParamField path="-t, --tag <tags...>" type="string[]">
+  Filter by tags
+</ParamField>
+
+<ParamField path="-f, --file <path>" type="string">
+  Search for a specific file path
+</ParamField>
+
+<ParamField path="-l, --limit <number>" type="string" default="10">
+  Max results to show
+</ParamField>
+
+<ParamField path="--ai" type="boolean">
+  Generate an AI-powered summary of the search results
+</ParamField>
+
+<ParamField path="--no-copy" type="boolean">
+  Do not copy AI summary to clipboard
+</ParamField>
+
+<ParamField path="--json" type="boolean">
+  Output results as JSON
+</ParamField>
+
+<ParamField path="--debug" type="boolean">
+  Show debug output
+</ParamField>
+
+## Examples
+
+### Search by keyword
+
+```bash
+devdaily recall auth
+```
+
+### Search for a phrase
+
+```bash
+devdaily recall "authentication feature"
+```
+
+### Find ticket work
+
+```bash
+devdaily recall PROJ-123
+```
+
+### Search for a file
+
+```bash
+devdaily recall --file src/auth/login.ts
+```
+
+### Search by tag
+
+```bash
+devdaily recall --tag bugfix
+```
+
+### AI summary of results
+
+```bash
+devdaily recall login --ai
+```
+
+### Custom date range
+
+```bash
+devdaily recall oauth --from 2024-01-01 --to 2024-01-31
+```
+
+### Last 180 days, more results
+
+```bash
+devdaily recall api --days 180 --limit 20
+```
+
+### Search specific project
+
+```bash
+devdaily recall redis --project backend-api
+```
+
+### JSON output
+
+```bash
+devdaily recall webhook --json > results.json
+```
+
+## Search Behavior
+
+The recall command searches across:
+
+- **Commit messages** - Full text search
+- **Branch names** - Pattern matching
+- **File paths** - Changed files in commits
+- **PR titles** - Pull request descriptions
+- **Ticket IDs** - Linked tickets
+- **Notes** - Manual notes in snapshots
+- **Tags** - Custom tags
+
+## Match Scoring
+
+Results are scored and ranked by:
+
+- Exact matches in commit messages
+- File path matches
+- Ticket ID matches
+- Tag matches
+- Recency (more recent = higher score)
+
+## File History Mode
+
+When using `--file`, the output shows:
+
+- All dates the file was modified
+- Commits that changed the file
+- Commit messages and hashes
+
+## AI Summary Mode
+
+With `--ai`, generates a summary that answers:
+
+1. **Summary** - What the work was about
+2. **Timeline** - When key activities happened
+3. **Key details** - Branches, PRs, files, tickets
+4. **Current state** - Is it done, in progress, or abandoned?
+
+## JSON Output
+
+With `--json`, returns structured data:
+
+```json
+[
+  {
+    "date": "2024-01-15",
+    "projectId": "my-api",
+    "branch": "feature/auth",
+    "score": 8,
+    "matchReasons": ["commit message", "file path"],
+    "commits": 3,
+    "prs": 1,
+    "tags": ["feature", "auth"],
+    "notes": "Added OAuth support"
+  }
+]
+```
+
+## Requirements
+
+- Journal snapshots (created with `devdaily snapshot`)
+- GitHub Copilot CLI (for `--ai` mode only)

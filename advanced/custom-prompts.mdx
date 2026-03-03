@@ -1,0 +1,397 @@
+---
+title: 'Custom PR Prompts'
+description: 'Customize how AI generates PR descriptions for your team'
+---
+
+## Overview
+
+Custom PR prompts let you teach DevDaily AI how to write PR descriptions that match your team's conventions, tone, and structure. Think of it like a "CLAUDE.md" file but specifically for PR descriptions.
+
+## How It Works
+
+When generating a PR description, DevDaily searches for a custom prompt file in your repository. If found, the file contents are injected into the AI prompt as "team guidelines" that the AI must follow.
+
+This allows you to:
+- Enforce team-specific PR description formats
+- Control tone and style (formal vs. casual, technical vs. business-focused)
+- Require specific sections (testing instructions, breaking changes, etc.)
+- Mandate ticket references or links
+- Specify what NOT to include
+
+## Search Order
+
+DevDaily looks for custom prompt files in this order:
+
+<Steps>
+  <Step title="Config-specified path">
+    Path specified in `pr.promptFile` in your config (`~/.config/devdaily/config.json`)
+  </Step>
+  <Step title="Repo root">
+    `.devdaily-pr-prompt.md` in the repo root
+  </Step>
+  <Step title=".github directory">
+    `.github/devdaily-pr-prompt.md`
+  </Step>
+  <Step title="Alternative .github name">
+    `.github/PR_DESCRIPTION_PROMPT.md`
+  </Step>
+  <Step title="docs directory">
+    `docs/devdaily-pr-prompt.md`
+  </Step>
+</Steps>
+
+The first file found is used.
+
+## Creating a Custom Prompt
+
+### Sample Prompt File
+
+Create a file at `.devdaily-pr-prompt.md` in your repo root:
+
+```markdown
+# PR Description Guidelines
+
+These guidelines tell DevDaily AI how to generate PR descriptions for your team.
+
+## Tone & Style
+
+- Write in a professional but approachable tone
+- Be concise — aim for clarity over verbosity
+- Use bullet points for lists of changes
+- Avoid jargon unless it's well-known in the team
+- No emojis in the description body
+
+## Description Format
+
+- Start with a one-sentence summary of what the PR does
+- Follow with bullet points of specific changes
+- Group related changes together
+- Mention any architectural decisions or trade-offs
+
+## Ticket References
+
+- Always include ticket IDs (e.g., PROJ-123) when available
+- Link to the ticket URL when possible
+- Explain how the changes relate to the ticket's acceptance criteria
+
+## Testing Instructions
+
+- Provide step-by-step instructions for reviewers to test
+- Include any required environment setup
+- Mention edge cases that should be verified
+- Include expected vs actual behavior for bug fixes
+
+## Breaking Changes
+
+- Clearly call out any breaking changes
+- Explain migration steps if applicable
+- Tag breaking changes with a warning
+
+## What NOT to Include
+
+- Don't list every file changed (that's in the diff)
+- Don't repeat commit messages verbatim
+- Don't include implementation details that are obvious from the code
+- Don't include TODOs — create follow-up tickets instead
+```
+
+### Structured Guidelines
+
+The prompt file is parsed into structured sections based on markdown headings (h1-h3). Each section becomes a "guideline" that the AI follows.
+
+From `src/core/pr-prompt.ts:89`:
+
+```typescript
+export function parsePRPrompt(content: string): PRGuideline[] {
+  const guidelines: PRGuideline[] = [];
+  const lines = content.split('\n');
+
+  let currentHeading: string | null = null;
+  let currentContent: string[] = [];
+  let insideCodeBlock = false;
+
+  for (const line of lines) {
+    // Track code blocks so we don't treat headings inside them as real headings
+    if (line.trimEnd().startsWith('```')) {
+      insideCodeBlock = !insideCodeBlock;
+    }
+
+    // Only match headings when NOT inside a code block
+    const headingMatch = !insideCodeBlock ? line.match(/^#{1,3}\s+(.+)$/) : null;
+
+    if (headingMatch) {
+      // Save previous section
+      if (currentHeading !== null) {
+        guidelines.push({
+          heading: currentHeading,
+          content: currentContent.join('\n').trim(),
+        });
+      }
+      currentHeading = headingMatch[1].trim();
+      currentContent = [];
+    } else if (currentHeading !== null) {
+      currentContent.push(line);
+    }
+  }
+
+  return guidelines;
+}
+```
+
+<Info>
+Headings inside code blocks are ignored so you can safely include examples.
+</Info>
+
+## AI Prompt Injection
+
+When a custom prompt is found, it's formatted and injected into the AI prompt:
+
+```typescript
+export function formatPRPromptForAI(promptConfig: PRPromptConfig): string {
+  const lines: string[] = [
+    '',
+    '=== TEAM PR DESCRIPTION GUIDELINES (follow these strictly) ===',
+    '',
+  ];
+
+  if (promptConfig.guidelines.length > 0) {
+    for (const guideline of promptConfig.guidelines) {
+      lines.push(`### ${guideline.heading}`);
+      if (guideline.content) {
+        lines.push(guideline.content);
+      }
+      lines.push('');
+    }
+  } else {
+    // No structured guidelines — just include the raw content
+    lines.push(promptConfig.raw);
+    lines.push('');
+  }
+
+  lines.push('=== END TEAM GUIDELINES ===');
+  lines.push('');
+
+  return lines.join('\n');
+}
+```
+
+This clear delineation tells the AI to treat these as strict rules.
+
+## Config-Based Path
+
+You can specify a custom path in your DevDaily config:
+
+```json
+{
+  "pr": {
+    "promptFile": ".github/pr-prompt.md"
+  }
+}
+```
+
+Both absolute and relative paths are supported:
+
+```json
+{
+  "pr": {
+    "promptFile": "/Users/me/shared-prompts/pr-guidelines.md"  // Absolute
+  }
+}
+```
+
+```json
+{
+  "pr": {
+    "promptFile": "docs/pr-guidelines.md"  // Relative to repo root
+  }
+}
+```
+
+## Example Use Cases
+
+### Enforce Business Context
+
+```markdown
+## Business Value
+
+Every PR description MUST explain:
+- What problem this solves for users
+- Why this change is important now
+- What the expected impact is (revenue, conversion, retention, etc.)
+
+Do NOT write technical descriptions without business context.
+```
+
+### Require Screenshots
+
+```markdown
+## Visual Changes
+
+For any UI changes:
+- Include before/after screenshots
+- Show both desktop and mobile views
+- Highlight the specific areas that changed
+
+Use this format:
+```
+#### Before
+![before](url)
+
+#### After
+![after](url)
+```
+```
+
+### Team-Specific Ticket Format
+
+```markdown
+## Ticket References
+
+Always include:
+- Jira ticket ID in the format: `[PROJ-123]`
+- Link to ticket: `https://company.atlassian.net/browse/PROJ-123`
+- Quote the acceptance criteria from the ticket
+
+Example:
+```
+Fixes [PROJ-123](https://company.atlassian.net/browse/PROJ-123)
+
+**Acceptance Criteria:**
+- [ ] Users can reset password via email
+- [ ] Password must meet security requirements
+```
+```
+
+### Control Tone
+
+```markdown
+## Tone
+
+- Use first-person ("I implemented..." not "This PR implements...")
+- Be conversational and friendly
+- Celebrate wins ("This was tricky but we nailed it!")
+- Acknowledge reviewers ("@alice might want to review the API changes")
+```
+
+## Compatibility with PR Templates
+
+Custom prompts work alongside GitHub PR templates:
+
+1. **PR template** defines the **structure** (sections, placeholders)
+2. **Custom prompt** defines the **content style** (tone, what to include)
+
+From `src/core/copilot.ts:336`:
+
+```typescript
+async generatePRDescription(data: {
+  branch: string;
+  commits: string[];
+  files: string[];
+  templateContent?: string;  // GitHub PR template
+  promptConfig?: PRPromptConfig;  // Custom prompt
+}): Promise<string> {
+  // Build template guidance block
+  const templateBlock = data.templateContent
+    ? `\n=== PR TEMPLATE (follow this structure) ===\n${data.templateContent}\n=== END PR TEMPLATE ===\n`
+    : '';
+
+  // Build team guidelines block
+  const guidelinesBlock = data.promptConfig 
+    ? formatPRPromptForAI(data.promptConfig) 
+    : '';
+
+  const prompt = `
+    ...
+    ${templateBlock}
+    ${guidelinesBlock}
+    
+    Generate a comprehensive PR description.
+    ${data.templateContent ? 'Follow the PR template structure above.' : ''}
+  `;
+
+  return this.suggest(prompt);
+}
+```
+
+The AI receives both:
+- **Template**: "Here's the structure to use"
+- **Prompt**: "Here's the tone and content style to follow"
+
+## Debugging
+
+To see what prompt is being sent to the AI, use debug mode:
+
+```bash
+DEVD_DEBUG=1 devdaily pr
+```
+
+This shows:
+1. The raw prompt sent to Copilot
+2. Whether a custom prompt file was found
+3. The injected guidelines block
+
+## Generate Sample Prompt
+
+You can generate a sample prompt file to get started:
+
+```typescript
+import { generateSamplePRPrompt, getDefaultPRPromptPath } from './pr-prompt.js';
+import { writeFileSync } from 'fs';
+
+const repoRoot = process.cwd();
+const path = getDefaultPRPromptPath(repoRoot);
+const content = generateSamplePRPrompt();
+
+writeFileSync(path, content, 'utf-8');
+console.log(`Created sample prompt at ${path}`);
+```
+
+## Best Practices
+
+<Card title="Be Specific" icon="bullseye">
+  Vague guidelines like "be clear" don't help. Instead: "Include 2-3 bullet points describing WHAT changed, with file paths."
+</Card>
+
+<Card title="Show Examples" icon="code">
+  Include example PR descriptions in your prompt file so the AI can mimic the style.
+</Card>
+
+<Card title="Use Positive Language" icon="check">
+  Say "Include ticket links" instead of "Don't forget ticket links". Positive instructions work better.
+</Card>
+
+<Card title="Test Iteratively" icon="rotate">
+  Start simple, generate a few PRs, then refine your prompt based on what the AI produces.
+</Card>
+
+<Card title="Version Control" icon="code-branch">
+  Commit your prompt file to the repo so the whole team benefits and can suggest improvements.
+</Card>
+
+## Troubleshooting
+
+### Prompt Not Being Used
+
+Check these:
+
+1. **File location**: Is it in one of the searched paths?
+2. **File name**: Ensure correct spelling (`.devdaily-pr-prompt.md`)
+3. **Permissions**: Can DevDaily read the file?
+4. **Debug mode**: Run with `DEVD_DEBUG=1` to see what's loaded
+
+### AI Not Following Guidelines
+
+Try:
+
+1. **Be more explicit**: Add "MUST", "ALWAYS", "NEVER" to emphasize requirements
+2. **Provide examples**: Show don't tell — include sample PR descriptions
+3. **Simplify**: Start with 2-3 core rules, add more once those work
+4. **Check conflicts**: Ensure your prompt doesn't contradict the PR template
+
+### Guidelines Too Restrictive
+
+If the AI produces overly formulaic output:
+
+1. **Add flexibility**: "Prefer X, but Y is acceptable if needed"
+2. **Remove micro-rules**: Focus on high-level principles, not word counts
+3. **Emphasize judgment**: "Use your judgment to decide which changes are worth highlighting"

@@ -1,0 +1,159 @@
+---
+title: "devdaily context"
+description: "Recover what you were working on and fight context switching amnesia"
+---
+
+## Description
+
+Helps you quickly recover your work context after time away or context switching. Shows your recent activity, active branches, work-in-progress, and provides AI-powered summaries of where you left off.
+
+## Usage
+
+```bash
+devdaily context [options]
+```
+
+## Options
+
+<ParamField path="-d, --days <number>" type="string" default="7">
+  Number of days to look back in journal history
+</ParamField>
+
+<ParamField path="-p, --project <id>" type="string">
+  Filter by specific project identifier
+</ParamField>
+
+<ParamField path="--all-projects" type="boolean">
+  Show context across all tracked projects
+</ParamField>
+
+<ParamField path="--date <date>" type="string">
+  Show context for a specific date (YYYY-MM-DD)
+</ParamField>
+
+<ParamField path="--from <date>" type="string">
+  Start date for range (YYYY-MM-DD)
+</ParamField>
+
+<ParamField path="--to <date>" type="string">
+  End date for range (YYYY-MM-DD)
+</ParamField>
+
+<ParamField path="--ai" type="boolean">
+  Generate an AI-powered "where did I leave off?" summary
+</ParamField>
+
+<ParamField path="--branches" type="boolean">
+  Show detailed active branch status
+</ParamField>
+
+<ParamField path="--no-copy" type="boolean">
+  Do not copy AI summary to clipboard
+</ParamField>
+
+<ParamField path="--raw" type="boolean">
+  Output raw context data (no formatting)
+</ParamField>
+
+<ParamField path="--debug" type="boolean">
+  Show debug output
+</ParamField>
+
+## Examples
+
+### See what you were working on
+
+```bash
+devdaily context
+```
+
+### AI summary of where you left off
+
+```bash
+devdaily context --ai
+```
+
+### Last 14 days
+
+```bash
+devdaily context --days 14
+```
+
+### Specific date
+
+```bash
+devdaily context --date 2024-01-15
+```
+
+### All branches with status
+
+```bash
+devdaily context --branches
+```
+
+### Cross-project context
+
+```bash
+devdaily context --all-projects --ai
+```
+
+### Specific project
+
+```bash
+devdaily context --project my-api
+```
+
+## What It Shows
+
+### Current State
+
+- Current branch and repository
+- Active branches with uncommitted changes
+- Branches ahead of base (unpushed commits)
+- Work-in-progress status
+
+### Activity Timeline
+
+- Day-by-day commit history
+- Branch switches and context changes
+- Notes and tags from snapshots
+- Diff statistics per day
+
+### Pull Requests
+
+- Open, merged, and closed PRs
+- PR status and linked branches
+
+### Tickets
+
+- Associated ticket IDs
+- Ticket status and titles
+
+### Work Areas
+
+- Percentage breakdown by category (frontend, backend, etc.)
+- File change patterns
+
+## AI Summary Mode
+
+With `--ai`, generates a concise briefing including:
+
+1. **What I was working on** - Main themes and tasks
+2. **Current state** - What's done, in progress, pending
+3. **Open threads** - Uncommitted work, open PRs, unfinished tasks
+4. **Suggested next steps** - What to pick up first
+
+## Journal Snapshots
+
+The context command relies on journal snapshots. If you haven't taken any snapshots yet:
+
+```bash
+devdaily snapshot  # Take a snapshot now
+devdaily init --git-hooks  # Auto-snapshot on commit/checkout
+```
+
+## Requirements
+
+- Journal snapshots (taken with `devdaily snapshot`)
+- Git repository (for live snapshot if no journal data)
+- GitHub Copilot CLI (for `--ai` mode only)

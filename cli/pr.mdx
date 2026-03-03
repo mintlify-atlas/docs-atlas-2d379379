@@ -1,0 +1,172 @@
+---
+title: "devdaily pr"
+description: "Generate AI-powered PR descriptions from your current branch"
+---
+
+## Description
+
+Generates comprehensive pull request descriptions by analyzing commits, changed files, and linked tickets on your current branch. Supports PR templates and custom team guidelines.
+
+## Usage
+
+```bash
+devdaily pr [options]
+```
+
+## Options
+
+<ParamField path="-b, --base <branch>" type="string">
+  Base branch to compare against. If not specified, auto-detects from repository or uses config default.
+</ParamField>
+
+<ParamField path="-c, --create" type="boolean">
+  Create the PR on GitHub after generation
+</ParamField>
+
+<ParamField path="-d, --draft" type="boolean">
+  Create as a draft PR
+</ParamField>
+
+<ParamField path="-p, --preview" type="boolean">
+  Show preview before creating the PR
+</ParamField>
+
+<ParamField path="-t, --ticket <id>" type="string">
+  Include specific ticket/issue for context
+</ParamField>
+
+<ParamField path="--no-tickets" type="boolean">
+  Skip fetching ticket/issue context
+</ParamField>
+
+<ParamField path="--no-copy" type="boolean">
+  Do not copy the PR description to clipboard
+</ParamField>
+
+<ParamField path="--no-template" type="boolean">
+  Ignore PR template, use default format
+</ParamField>
+
+<ParamField path="--no-diff" type="boolean">
+  Skip including diff context in the AI prompt
+</ParamField>
+
+<ParamField path="--no-prompt-file" type="boolean">
+  Ignore custom PR prompt file (`.devdaily-pr-prompt.md`)
+</ParamField>
+
+<ParamField path="-i, --interactive" type="boolean">
+  Interactive mode for selecting labels, reviewers, and assignees
+</ParamField>
+
+<ParamField path="--no-journal" type="boolean">
+  Skip auto-saving a snapshot to the journal
+</ParamField>
+
+<ParamField path="--debug" type="boolean">
+  Show debug information including prompts and raw AI input
+</ParamField>
+
+## Examples
+
+### Generate PR description
+
+```bash
+devdaily pr
+```
+
+### Generate and create PR
+
+```bash
+devdaily pr --create
+```
+
+### Create draft PR with preview
+
+```bash
+devdaily pr --draft --preview
+```
+
+### Interactive mode with labels and reviewers
+
+```bash
+devdaily pr --interactive
+```
+
+### Specify base branch
+
+```bash
+devdaily pr --base develop
+```
+
+### Include specific ticket
+
+```bash
+devdaily pr --ticket PROJ-123
+```
+
+### Skip template, use AI-only
+
+```bash
+devdaily pr --no-template
+```
+
+## PR Templates
+
+DevDaily automatically detects PR templates in these locations:
+
+- `.github/pull_request_template.md`
+- `.github/PULL_REQUEST_TEMPLATE.md`
+- `docs/pull_request_template.md`
+- `PULL_REQUEST_TEMPLATE.md`
+
+The AI will fill in template sections intelligently based on your changes.
+
+## Custom PR Guidelines
+
+Create a `.devdaily-pr-prompt.md` file in your repository root to customize how the AI generates PR descriptions:
+
+```markdown
+# PR Description Guidelines
+
+Our team prefers:
+- Focus on the "why" not the "what"
+- Include testing notes
+- Reference ticket IDs
+- Note breaking changes
+```
+
+## Output
+
+The PR description includes:
+
+- Auto-generated title based on commits
+- Summary of changes
+- Ticket links and context
+- Testing notes
+- Breaking changes (if any)
+- List of modified files
+
+## Interactive Mode
+
+When using `--interactive`, you can select:
+
+- **Labels** - Choose from repository labels
+- **Reviewers** - Select team members to review
+- **Assignees** - Assign the PR to specific people
+
+## Configuration
+
+Relevant config settings:
+
+- `pr.defaultBase` - Default base branch
+- `pr.includeDiff` - Include code diff in AI context
+- `pr.maxDiffLines` - Maximum diff lines to send (default: 200)
+- `git.defaultBranch` - Fallback base branch
+
+## Requirements
+
+- Must be run inside a git repository
+- Must be on a feature branch (not the base branch)
+- Requires GitHub Copilot CLI
+- Optional: `gh` CLI for creating PRs on GitHub

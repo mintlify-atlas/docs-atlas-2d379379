@@ -1,0 +1,605 @@
+---
+title: Slack and Discord Notifications
+description: Configure webhook integrations to automatically send standups, PR announcements, and weekly summaries to Slack and Discord channels.
+---
+
+DevDaily can send standup notes, PR announcements, and weekly summaries directly to Slack and Discord channels using webhooks.
+
+## Overview
+
+Notifications enable:
+- **Automated standups**: Send daily updates to your team channel
+- **PR announcements**: Notify reviewers when PRs are created
+- **Weekly summaries**: Share accomplishments with stakeholders
+- **Custom messages**: Send any DevDaily output to chat
+
+<Note>
+All notifications use **webhooks** - no OAuth or app installation required. Messages are sent via HTTPS POST requests.
+</Note>
+
+## Quick Setup
+
+Run the interactive notification setup:
+
+```bash
+devdaily init --notifications
+```
+
+This will:
+1. Ask which platform(s) you want to configure
+2. Guide you through webhook URL creation
+3. Test the connection with a sample message
+4. Save configuration to secrets.json
+
+## Slack Setup
+
+<Steps>
+  <Step title="Create Incoming Webhook">
+    1. Go to https://api.slack.com/apps
+    2. Click "Create New App" → "From scratch"
+    3. Name it "DevDaily" and select your workspace
+    4. Under "Features" → "Incoming Webhooks", toggle "Activate Incoming Webhooks"
+    5. Click "Add New Webhook to Workspace"
+    6. Select the channel (e.g., `#engineering-standups`)
+    7. Copy the webhook URL (starts with `https://hooks.slack.com/services/...`)
+  </Step>
+  
+  <Step title="Store Webhook URL">
+    Add to `~/.config/devdaily/secrets.json`:
+    
+    ```json
+    {
+      "slack": {
+        "webhookUrl": "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXX"
+      }
+    }
+    ```
+  </Step>
+  
+  <Step title="Enable in Configuration">
+    Update `.devdaily.json`:
+    
+    ```json
+    {
+      "notifications": {
+        "slack": {
+          "enabled": true,
+          "channel": "#engineering-standups"
+        }
+      }
+    }
+    ```
+  </Step>
+  
+  <Step title="Test Connection">
+    ```bash
+    devdaily standup --test-webhook
+    # Sends test message to Slack
+    ```
+  </Step>
+</Steps>
+
+### Configuration Options
+
+<ParamField path="notifications.slack.enabled" type="boolean" default="false">
+  Enable Slack notifications
+</ParamField>
+
+<ParamField path="notifications.slack.webhookUrl" type="string" required>
+  Slack incoming webhook URL (stored in secrets.json)
+</ParamField>
+
+<ParamField path="notifications.slack.channel" type="string">
+  Default channel name (optional, for documentation only - webhook determines actual channel)
+</ParamField>
+
+### Environment Variable
+
+```bash
+export SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..."
+```
+
+## Discord Setup
+
+<Steps>
+  <Step title="Create Webhook">
+    1. Open your Discord server
+    2. Right-click the channel → "Edit Channel"
+    3. Go to "Integrations" → "Webhooks"
+    4. Click "New Webhook"
+    5. Name it "DevDaily" and optionally set an avatar
+    6. Copy the webhook URL (starts with `https://discord.com/api/webhooks/...`)
+  </Step>
+  
+  <Step title="Store Webhook URL">
+    Add to `~/.config/devdaily/secrets.json`:
+    
+    ```json
+    {
+      "discord": {
+        "webhookUrl": "https://discord.com/api/webhooks/123456789/abcdefghijklmnopqrstuvwxyz"
+      }
+    }
+    ```
+  </Step>
+  
+  <Step title="Enable in Configuration">
+    Update `.devdaily.json`:
+    
+    ```json
+    {
+      "notifications": {
+        "discord": {
+          "enabled": true
+        }
+      }
+    }
+    ```
+  </Step>
+  
+  <Step title="Test Connection">
+    ```bash
+    devdaily standup --test-webhook
+    # Sends test message to Discord
+    ```
+  </Step>
+</Steps>
+
+### Configuration Options
+
+<ParamField path="notifications.discord.enabled" type="boolean" default="false">
+  Enable Discord notifications
+</ParamField>
+
+<ParamField path="notifications.discord.webhookUrl" type="string" required>
+  Discord webhook URL (stored in secrets.json)
+</ParamField>
+
+### Environment Variable
+
+```bash
+export DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..."
+```
+
+## Scheduled Standups
+
+Configure automatic daily standup delivery:
+
+```json .devdaily.json
+{
+  "notifications": {
+    "slack": {
+      "enabled": true
+    },
+    "standupSchedule": "0 9 * * 1-5",
+    "standupTimezone": "America/New_York"
+  },
+  "standup": {
+    "scheduleDays": ["monday", "tuesday", "wednesday", "thursday", "friday"],
+    "scheduleTime": "09:00"
+  }
+}
+```
+
+<ParamField path="notifications.standupSchedule" type="string (cron)">
+  Cron expression for standup schedule (e.g., `0 9 * * 1-5` = 9am weekdays)
+</ParamField>
+
+<ParamField path="notifications.standupTimezone" type="string" default="America/New_York">
+  Timezone for scheduled standups (e.g., `America/Los_Angeles`, `Europe/London`)
+</ParamField>
+
+<ParamField path="standup.scheduleDays" type="string[]">
+  Days of week to send standups: `monday`, `tuesday`, `wednesday`, `thursday`, `friday`, `saturday`, `sunday`
+</ParamField>
+
+<Note>
+Scheduled standups require setting up a cron job or CI workflow. See the [Automation Guide](#automation) below.
+</Note>
+
+## Sending Notifications
+
+### Manual Sending
+
+Send any command output to configured channels:
+
+```bash
+# Send standup to all enabled channels
+devdaily standup --send
+
+# Send to Slack only
+devdaily standup --slack
+
+# Send to Discord only
+devdaily standup --discord
+
+# Send weekly summary
+devdaily week --send
+
+# Send PR announcement
+devdaily pr --create --send
+```
+
+### Automatic Sending
+
+When notifications are enabled, you can configure commands to always send:
+
+```json .devdaily.json
+{
+  "standup": {
+    "autoSend": true  // Always send standups
+  },
+  "pr": {
+    "announceOnCreate": true  // Announce new PRs
+  }
+}
+```
+
+## Message Formats
+
+### Slack Format
+
+Slack messages use [Block Kit](https://api.slack.com/block-kit) for rich formatting:
+
+```json
+{
+  "blocks": [
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": "☀️ Daily Standup",
+        "emoji": true
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Yesterday:*\n- Implemented OAuth\n- Fixed login bug"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Related Tickets:*\n• <https://jira.com/PROJ-123|PROJ-123>: Add OAuth"
+      }
+    }
+  ]
+}
+```
+
+**Features:**
+- Header with emoji
+- Markdown formatting (`*bold*`, `_italic_`, ~~strikethrough~~)
+- Clickable links for tickets
+- Dividers between sections
+- Contextual footer with timestamp
+
+### Discord Format
+
+Discord messages use [embeds](https://discord.com/developers/docs/resources/channel#embed-object):
+
+```json
+{
+  "embeds": [
+    {
+      "title": "☀️ Daily Standup",
+      "description": "**Yesterday:**\n- Implemented OAuth\n- Fixed login bug",
+      "color": 4905600,
+      "fields": [
+        {
+          "name": "PROJ-123",
+          "value": "[Add OAuth](https://jira.com/PROJ-123)",
+          "inline": true
+        }
+      ],
+      "footer": {
+        "text": "Sent via DevDaily"
+      },
+      "timestamp": "2026-03-03T10:15:30.000Z"
+    }
+  ],
+  "username": "DevDaily"
+}
+```
+
+**Features:**
+- Color-coded embeds (green for standup, blue for PR, purple for weekly)
+- Markdown in description
+- Fields for ticket metadata
+- Timestamp and footer
+- Custom username and avatar
+
+## Output Format Override
+
+Send Slack-optimized output to any channel:
+
+```bash
+devdaily standup --format slack --slack
+```
+
+This converts markdown to Slack's mrkdwn format:
+- `**bold**` → `*bold*`
+- `*italic*` → `_italic_`
+- `[link](url)` → `<url|link>`
+- Code blocks → Slack code blocks
+
+## Automation
+
+### GitHub Actions
+
+Send standups via GitHub Actions:
+
+```yaml .github/workflows/daily-standup.yml
+name: Daily Standup
+
+on:
+  schedule:
+    - cron: '0 9 * * 1-5'  # 9am weekdays (UTC)
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  standup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install DevDaily
+        run: npm install -g devdaily-ai
+      
+      - name: Send Standup
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          devdaily standup --slack --no-copy
+```
+
+<Warning>
+Add `SLACK_WEBHOOK_URL` and `DISCORD_WEBHOOK_URL` to your repository secrets under Settings → Secrets and variables → Actions.
+</Warning>
+
+### Cron Job
+
+Send standups via cron (Linux/macOS):
+
+```bash
+crontab -e
+```
+
+Add:
+
+```cron
+# Daily standup at 9am (Mon-Fri)
+0 9 * * 1-5 cd /path/to/repo && devdaily standup --slack --no-copy
+
+# Weekly summary on Friday at 5pm
+0 17 * * 5 cd /path/to/repo && devdaily week --slack --no-copy
+```
+
+Export webhook URLs in your shell profile:
+
+```bash ~/.bashrc
+export SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..."
+export DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..."
+```
+
+## Notification Types
+
+### Standup Notification
+
+```bash
+devdaily standup --send
+```
+
+**Includes:**
+- Yesterday's completed work
+- Today's planned work
+- Blockers (if any)
+- Related ticket links
+- Commit/file statistics
+
+**Appearance:**
+- Title: "☀️ Daily Standup"
+- Color: Green
+- Emoji: ☀️
+
+### PR Notification
+
+```bash
+devdaily pr --create --send
+```
+
+**Includes:**
+- PR title and link
+- Description summary
+- Ticket references
+- Diff statistics
+
+**Appearance:**
+- Title: "🔀 New PR: [title]"
+- Color: Blue
+- Emoji: 🔀
+- Direct link to PR
+
+### Weekly Summary Notification
+
+```bash
+devdaily week --send
+```
+
+**Includes:**
+- Weekly accomplishments
+- Commit and PR counts
+- Ticket completions
+- Stats footer
+
+**Appearance:**
+- Title: "📊 Weekly Summary"
+- Color: Purple
+- Emoji: 📊
+- Footer: "📊 X commits · Y PRs this week"
+
+## Custom Messages
+
+Send custom notifications programmatically:
+
+```typescript
+import { sendNotification, formatStandupNotification } from 'devdaily-ai';
+
+const message = formatStandupNotification(
+  'Yesterday:\n- Implemented OAuth\n- Fixed login bug',
+  [
+    {
+      id: 'PROJ-123',
+      url: 'https://jira.com/browse/PROJ-123',
+      title: 'Add OAuth'
+    }
+  ]
+);
+
+await sendNotification(message, { slack: true, discord: true });
+```
+
+## Troubleshooting
+
+### Webhook Test Fails
+
+1. **Verify webhook URL**:
+   ```bash
+   devdaily config --path
+   cat ~/.config/devdaily/secrets.json | grep webhookUrl
+   ```
+
+2. **Test with curl**:
+   ```bash
+   # Slack
+   curl -X POST -H 'Content-Type: application/json' \
+     -d '{"text":"Test from DevDaily"}' \
+     https://hooks.slack.com/services/YOUR/WEBHOOK/URL
+   
+   # Discord
+   curl -X POST -H 'Content-Type: application/json' \
+     -d '{"content":"Test from DevDaily"}' \
+     https://discord.com/api/webhooks/YOUR/WEBHOOK/URL
+   ```
+
+3. **Check webhook status**:
+   - Slack: Verify webhook is active in https://api.slack.com/apps
+   - Discord: Check webhook hasn't been deleted in channel settings
+
+### Messages Not Sending
+
+<AccordionGroup>
+  <Accordion title="Enabled but not sending">
+    Check configuration:
+    ```bash
+    devdaily config | grep -A5 notifications
+    ```
+    
+    Ensure:
+    - `enabled: true` for your platform
+    - `webhookUrl` is set in secrets.json
+  </Accordion>
+  
+  <Accordion title="Rate limit errors">
+    Both platforms have rate limits:
+    - Slack: 1 message per second
+    - Discord: 30 messages per minute
+    
+    Avoid rapid-fire sends. Use `--send` sparingly.
+  </Accordion>
+  
+  <Accordion title="Formatting issues">
+    Test different formats:
+    ```bash
+    devdaily standup --format plain --slack
+    devdaily standup --format markdown --slack
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Network/Firewall Issues
+
+Ensure outbound HTTPS is allowed to:
+- Slack: `hooks.slack.com`
+- Discord: `discord.com`
+
+Test connectivity:
+
+```bash
+ping hooks.slack.com
+ping discord.com
+```
+
+## Security Best Practices
+
+<Warning>
+Webhook URLs are **sensitive credentials**. Anyone with a webhook URL can send messages to your channel.
+</Warning>
+
+1. **Store in secrets.json, never in .devdaily.json**:
+   ```json
+   // ❌ Bad
+   .devdaily.json: { "notifications": { "slack": { "webhookUrl": "..." } } }
+   
+   // ✅ Good
+   secrets.json: { "slack": { "webhookUrl": "..." } }
+   ```
+
+2. **Add secrets.json to .gitignore**:
+   ```bash
+   echo ".devdaily.secrets.json" >> .gitignore
+   echo "~/.config/devdaily/secrets.json" >> ~/.gitignore_global
+   ```
+
+3. **Use environment variables in CI/CD**:
+   ```yaml
+   env:
+     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+   ```
+
+4. **Rotate webhooks if exposed**:
+   - Slack: Delete old webhook, create new one
+   - Discord: Delete webhook in channel settings, create new
+
+5. **Restrict channel permissions**:
+   - Make notification channels read-only for most users
+   - Limit who can create/edit webhooks
+
+## Disabling Notifications
+
+Temporarily disable without removing configuration:
+
+```json .devdaily.json
+{
+  "notifications": {
+    "slack": { "enabled": false },
+    "discord": { "enabled": false }
+  }
+}
+```
+
+Or per-command:
+
+```bash
+devdaily standup --no-send
+```
+
+## Related Configuration
+
+<CardGroup cols={2}>
+  <Card title="Configuration Overview" icon="gear" href="/configuration/overview">
+    Learn about all configuration options
+  </Card>
+  
+  <Card title="Standup Command" icon="sun" href="/cli/standup">
+    Generate and send daily standups
+  </Card>
+</CardGroup>

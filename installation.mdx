@@ -1,0 +1,330 @@
+---
+title: Installation
+description: Install DevDaily AI and configure all prerequisites including Node.js, Git, GitHub CLI, and GitHub Copilot CLI
+---
+
+# Installation
+
+Get DevDaily AI up and running in minutes. This guide covers all prerequisites and installation steps.
+
+## Prerequisites
+
+Before installing DevDaily, ensure you have these tools installed:
+
+<CardGroup cols={2}>
+  <Card title="Node.js" icon="node-js">
+    Version 18.0.0 or higher required
+  </Card>
+  <Card title="Git" icon="git">
+    Any recent version for repository analysis
+  </Card>
+  <Card title="GitHub CLI" icon="github">
+    The `gh` command-line tool
+  </Card>
+  <Card title="GitHub Copilot CLI" icon="robot">
+    Copilot extension for the `gh` CLI
+  </Card>
+</CardGroup>
+
+### 1. Node.js
+
+<Steps>
+  <Step title="Check if Node.js is installed">
+    ```bash
+    node --version
+    ```
+    You should see version 18.0.0 or higher.
+  </Step>
+  
+  <Step title="Install Node.js (if needed)">
+    Download from [nodejs.org](https://nodejs.org) or use a version manager:
+    
+    <CodeGroup>
+    ```bash Using nvm (Recommended)
+    # Install nvm
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+    
+    # Install Node.js LTS
+    nvm install --lts
+    nvm use --lts
+    ```
+    
+    ```bash Using Homebrew (macOS)
+    brew install node
+    ```
+    
+    ```bash Using apt (Ubuntu/Debian)
+    curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+    sudo apt-get install -y nodejs
+    ```
+    </CodeGroup>
+  </Step>
+</Steps>
+
+### 2. Git
+
+<Steps>
+  <Step title="Check if Git is installed">
+    ```bash
+    git --version
+    ```
+  </Step>
+  
+  <Step title="Install Git (if needed)">
+    <CodeGroup>
+    ```bash macOS
+    brew install git
+    ```
+    
+    ```bash Ubuntu/Debian
+    sudo apt-get update
+    sudo apt-get install git
+    ```
+    
+    ```bash Windows
+    # Download from https://git-scm.com/download/win
+    winget install --id Git.Git -e --source winget
+    ```
+    </CodeGroup>
+  </Step>
+</Steps>
+
+### 3. GitHub CLI
+
+The GitHub CLI (`gh`) is required for creating PRs and accessing GitHub features.
+
+<Steps>
+  <Step title="Check if GitHub CLI is installed">
+    ```bash
+    gh --version
+    ```
+  </Step>
+  
+  <Step title="Install GitHub CLI (if needed)">
+    <CodeGroup>
+    ```bash macOS
+    brew install gh
+    ```
+    
+    ```bash Ubuntu/Debian
+    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+    sudo apt update
+    sudo apt install gh
+    ```
+    
+    ```bash Windows
+    winget install --id GitHub.cli
+    ```
+    </CodeGroup>
+  </Step>
+  
+  <Step title="Authenticate with GitHub">
+    ```bash
+    gh auth login
+    ```
+    Follow the interactive prompts to authenticate with your GitHub account.
+  </Step>
+</Steps>
+
+### 4. GitHub Copilot CLI Extension
+
+<Warning>
+You need an active **GitHub Copilot subscription** to use DevDaily's AI features. DevDaily uses GitHub Copilot CLI for all AI-powered text generation.
+</Warning>
+
+<Steps>
+  <Step title="Install the Copilot CLI extension">
+    ```bash
+    gh extension install github/gh-copilot
+    ```
+  </Step>
+  
+  <Step title="Verify the installation">
+    ```bash
+    gh copilot --version
+    ```
+    You should see version information for the Copilot extension.
+  </Step>
+  
+  <Step title="Test Copilot CLI">
+    ```bash
+    gh copilot suggest "list files in current directory"
+    ```
+    If you see a suggestion, Copilot CLI is working correctly.
+  </Step>
+</Steps>
+
+<Tip>
+If you don't have GitHub Copilot yet, you can [sign up for a subscription](https://github.com/features/copilot) or request access through your organization.
+</Tip>
+
+## Install DevDaily
+
+Once all prerequisites are installed, you can install DevDaily globally via npm:
+
+<Steps>
+  <Step title="Install DevDaily globally">
+    ```bash
+    npm install -g devdaily-ai
+    ```
+    
+    This installs the `devdaily` command globally on your system.
+  </Step>
+  
+  <Step title="Verify the installation">
+    ```bash
+    devdaily --version
+    ```
+    
+    You should see the current version number (e.g., `0.6.1`).
+  </Step>
+  
+  <Step title="Run the system diagnostic">
+    ```bash
+    devdaily doctor
+    ```
+    
+    This checks all prerequisites and shows their status:
+    
+    ```
+    ╭─────────────────────────────────────────╮
+    │                                         │
+    │   System Diagnostics                    │
+    │                                         │
+    ╰─────────────────────────────────────────╯
+    
+    ✓ Node.js                v20.11.0
+    ✓ Git                    v2.42.0
+    ✓ GitHub CLI             v2.40.1
+    ✓ GitHub Copilot CLI     gh extension
+    ✓ Git repository         ✓ Valid repository
+    ✓ Clipboard support      ✓ Available
+    
+    All checks passed! You're ready to use DevDaily.
+    ```
+  </Step>
+</Steps>
+
+<Note>
+If any checks fail, `devdaily doctor` will provide specific instructions on how to fix them.
+</Note>
+
+## Troubleshooting
+
+### GitHub Copilot CLI not found
+
+**Problem:** `devdaily doctor` shows "GitHub Copilot CLI not found"
+
+**Solution:**
+```bash
+# Install the extension
+gh extension install github/gh-copilot
+
+# Verify installation
+gh copilot --version
+```
+
+### Node.js version too old
+
+**Problem:** You have Node.js < 18.0.0
+
+**Solution:**
+```bash
+# Using nvm (recommended)
+nvm install --lts
+nvm use --lts
+
+# Or download from nodejs.org
+# https://nodejs.org/
+```
+
+### GitHub CLI authentication failed
+
+**Problem:** `gh auth status` shows you're not authenticated
+
+**Solution:**
+```bash
+# Re-authenticate
+gh auth login
+
+# Follow the prompts to log in
+```
+
+### Permission denied when installing globally
+
+**Problem:** `npm install -g` fails with permission errors
+
+**Solution:**
+```bash
+# Option 1: Use a Node version manager (recommended)
+nvm install --lts
+nvm use --lts
+npm install -g devdaily-ai
+
+# Option 2: Fix npm permissions
+# https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally
+```
+
+### Clipboard not working
+
+**Problem:** "Copied to clipboard" message appears but nothing is copied
+
+**Solution:**
+<CodeGroup>
+```bash Linux
+# Install xclip
+sudo apt-get install xclip
+
+# Or use xsel
+sudo apt-get install xsel
+```
+
+```bash macOS
+# Clipboard should work out of the box
+# If not, check System Preferences > Security & Privacy > Privacy > Accessibility
+```
+
+```bash Disable clipboard
+# Use --no-copy flag to skip clipboard
+devdaily standup --no-copy
+
+# Or disable in config
+# .devdaily.json:
+{
+  "output": {
+    "copyToClipboard": false
+  }
+}
+```
+</CodeGroup>
+
+## Using DevDaily Without GitHub Copilot
+
+<Warning>
+GitHub Copilot CLI is **required** for AI-powered generation. However, you can still use DevDaily to extract structured context.
+</Warning>
+
+If you don't have GitHub Copilot, you can use the `--raw-context` flag to get structured data and pipe it to any LLM:
+
+```bash
+# Get raw context without AI processing
+devdaily standup --raw-context
+
+# Pipe to your own LLM
+devdaily standup --raw-context | your-llm-cli
+```
+
+## Next Steps
+
+Now that DevDaily is installed, you're ready to start using it!
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get from install to running your first commands in minutes
+  </Card>
+  
+  <Card title="Configuration" icon="gear" href="/configuration/overview">
+    Customize DevDaily to match your workflow
+  </Card>
+</CardGroup>

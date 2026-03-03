@@ -1,0 +1,655 @@
+---
+title: Project Management Integration
+description: Connect DevDaily AI with GitHub Issues, Jira, Linear, or Notion to enrich standups and PRs with ticket metadata.
+---
+
+DevDaily can extract ticket IDs from branch names and commit messages, then fetch metadata from your project management tool to enrich standups, PR descriptions, and work summaries.
+
+## Supported Tools
+
+<CardGroup cols={2}>
+  <Card title="GitHub Issues" icon="github">
+    Uses `gh` CLI (no additional auth required)
+  </Card>
+  
+  <Card title="Jira" icon="jira">
+    REST API v3 with email + API token
+  </Card>
+  
+  <Card title="Linear" icon="linear">
+    GraphQL API with API key
+  </Card>
+  
+  <Card title="Notion" icon="notion">
+    REST API with integration token
+  </Card>
+</CardGroup>
+
+## Quick Setup
+
+Run the interactive setup wizard:
+
+```bash
+devdaily connect
+```
+
+Or specify a tool directly:
+
+```bash
+devdaily connect --tool github
+devdaily connect --tool jira
+devdaily connect --tool linear
+devdaily connect --tool notion
+```
+
+## Configuration
+
+Set your project management tool in `.devdaily.json`:
+
+```json .devdaily.json
+{
+  "projectManagement": {
+    "tool": "github",
+    "ticketPrefix": "PROJ",
+    "ticketPattern": null,
+    
+    "jira": {
+      "baseUrl": "https://yourcompany.atlassian.net",
+      "useApiToken": true,
+      "projectKey": "PROJ"
+    },
+    
+    "linear": {
+      "teamKey": "ENG",
+      "useApi": true
+    },
+    
+    "notion": {
+      "databaseId": "your-database-id",
+      "useApi": true
+    }
+  }
+}
+```
+
+<ParamField path="projectManagement.tool" type="enum" default="github">
+  Primary project management tool: `github`, `jira`, `linear`, `notion`, or `none`
+</ParamField>
+
+<ParamField path="projectManagement.ticketPrefix" type="string">
+  Ticket ID prefix (e.g., `PROJ`, `ENG`, `DEV`). Used to extract ticket numbers from branch names and commits.
+</ParamField>
+
+<ParamField path="projectManagement.ticketPattern" type="string (regex)">
+  Custom regex pattern for ticket extraction (advanced). Overrides default patterns.
+</ParamField>
+
+## GitHub Issues
+
+### Authentication
+
+GitHub Issues uses the `gh` CLI, which must be authenticated:
+
+```bash
+gh auth login
+gh auth status
+```
+
+No additional configuration needed - DevDaily reuses your `gh` session.
+
+### Configuration
+
+```json .devdaily.json
+{
+  "projectManagement": {
+    "tool": "github"
+  }
+}
+```
+
+### Ticket ID Patterns
+
+GitHub Issues are referenced by number:
+
+- `#123` - Issue number 123
+- `gh-123` - Alternative format
+
+Extracted from:
+- Branch names: `feature/123-auth-refactor`, `fix/#456-bug`
+- Commit messages: `Fix #123: Add authentication`
+
+### Example
+
+```bash
+# Create a branch referencing issue #123
+git checkout -b feature/123-auth-refactor
+
+# DevDaily will automatically fetch issue details
+devdaily standup
+# Output includes:
+# [#123] Add OAuth2 authentication
+#   Type: feature | Status: open
+#   Implement OAuth2 flow with GitHub provider
+```
+
+## Jira
+
+### Authentication
+
+Jira requires:
+1. **Base URL**: Your Jira instance URL
+2. **Email**: Your Jira account email
+3. **API Token**: Generate at https://id.atlassian.com/manage-profile/security/api-tokens
+
+<Steps>
+  <Step title="Generate API Token">
+    1. Go to https://id.atlassian.com/manage-profile/security/api-tokens
+    2. Click "Create API token"
+    3. Name it "DevDaily" and copy the token
+  </Step>
+  
+  <Step title="Store Credentials">
+    Add to `~/.config/devdaily/secrets.json`:
+    
+    ```json
+    {
+      "jira": {
+        "baseUrl": "https://yourcompany.atlassian.net",
+        "email": "your@email.com",
+        "apiToken": "your-api-token-here"
+      }
+    }
+    ```
+  </Step>
+  
+  <Step title="Configure Tool">
+    Set in `.devdaily.json`:
+    
+    ```json
+    {
+      "projectManagement": {
+        "tool": "jira",
+        "ticketPrefix": "PROJ",
+        "jira": {
+          "projectKey": "PROJ",
+          "useApiToken": true
+        }
+      }
+    }
+    ```
+  </Step>
+  
+  <Step title="Test Connection">
+    ```bash
+    devdaily connect --test
+    ```
+  </Step>
+</Steps>
+
+### Configuration
+
+<ParamField path="jira.baseUrl" type="string" required>
+  Jira instance URL (e.g., `https://yourcompany.atlassian.net`)
+</ParamField>
+
+<ParamField path="jira.projectKey" type="string">
+  Default project key for searches (e.g., `PROJ`, `ENG`)
+</ParamField>
+
+<ParamField path="jira.useApiToken" type="boolean" default="true">
+  Use API token authentication (recommended)
+</ParamField>
+
+### Ticket ID Patterns
+
+Jira tickets follow the format `PROJECT-123`:
+
+- `PROJ-123` - Standard format
+- `ENG-456` - Different project
+
+Extracted from:
+- Branch names: `feature/PROJ-123-auth`, `PROJ-456/implementation`
+- Commit messages: `PROJ-123: Add authentication`
+
+### Environment Variables
+
+```bash
+export JIRA_BASE_URL="https://yourcompany.atlassian.net"
+export JIRA_EMAIL="your@email.com"
+export JIRA_API_TOKEN="your-token"
+```
+
+### Example
+
+```bash
+git checkout -b feature/PROJ-123-oauth
+
+devdaily pr --create
+# Output includes:
+# **Ticket No:** PROJ-123
+# **Ticket link:** https://yourcompany.atlassian.net/browse/PROJ-123
+# **Summary:** Implement OAuth2 authentication
+# **Status:** In Progress
+```
+
+## Linear
+
+### Authentication
+
+Linear requires an API key:
+
+<Steps>
+  <Step title="Generate API Key">
+    1. Go to https://linear.app/settings/api
+    2. Click "Create new API key"
+    3. Name it "DevDaily" and copy the key
+  </Step>
+  
+  <Step title="Store API Key">
+    Add to `~/.config/devdaily/secrets.json`:
+    
+    ```json
+    {
+      "linear": {
+        "apiKey": "lin_api_..."
+      }
+    }
+    ```
+  </Step>
+  
+  <Step title="Configure Tool">
+    ```json .devdaily.json
+    {
+      "projectManagement": {
+        "tool": "linear",
+        "ticketPrefix": "ENG",
+        "linear": {
+          "teamKey": "ENG",
+          "useApi": true
+        }
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+### Configuration
+
+<ParamField path="linear.teamKey" type="string">
+  Team identifier (e.g., `ENG`, `DEV`, `PROD`)
+</ParamField>
+
+<ParamField path="linear.useApi" type="boolean" default="true">
+  Use Linear API (vs CLI - API recommended)
+</ParamField>
+
+### Ticket ID Patterns
+
+Linear tickets use format `TEAM-123`:
+
+- `ENG-123` - Engineering team issue
+- `DEV-456` - Development team issue
+
+Extracted from:
+- Branch names: `feature/ENG-123-auth`, `ENG-456/bugfix`
+- Commit messages: `ENG-123: Implement OAuth`
+
+### Environment Variables
+
+```bash
+export LINEAR_API_KEY="lin_api_..."
+```
+
+### Example
+
+```bash
+git checkout -b feature/ENG-123-oauth
+
+devdaily standup
+# Output includes:
+# [ENG-123] Implement OAuth2 authentication
+#   Type: feature | Status: In Progress | Priority: high
+#   Add OAuth2 flow with Google provider
+```
+
+## Notion
+
+### Authentication
+
+Notion requires:
+1. **Integration Token**: Create an integration at https://www.notion.so/my-integrations
+2. **Database ID**: The ID of your tasks/issues database
+
+<Steps>
+  <Step title="Create Integration">
+    1. Go to https://www.notion.so/my-integrations
+    2. Click "New integration"
+    3. Name it "DevDaily" and save
+    4. Copy the "Internal Integration Token"
+  </Step>
+  
+  <Step title="Share Database">
+    1. Open your tasks/issues database in Notion
+    2. Click "..." → "Add connections"
+    3. Select your "DevDaily" integration
+  </Step>
+  
+  <Step title="Get Database ID">
+    From the database URL:
+    ```
+    https://notion.so/yourworkspace/DATABASE_ID?v=...
+                                     ^^^^^^^^^^^^
+    ```
+  </Step>
+  
+  <Step title="Store Credentials">
+    ```json ~/.config/devdaily/secrets.json
+    {
+      "notion": {
+        "apiKey": "secret_...",
+        "databaseId": "your-database-id"
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+### Configuration
+
+<ParamField path="notion.databaseId" type="string" required>
+  Notion database ID containing tasks/issues
+</ParamField>
+
+<ParamField path="notion.useApi" type="boolean" default="true">
+  Use Notion API (recommended)
+</ParamField>
+
+### Ticket ID Patterns
+
+Notion uses UUIDs:
+
+- `a1b2c3d4-e5f6-7890-abcd-ef1234567890` - Full UUID
+- `a1b2c3d4e5f67890abcdef1234567890` - UUID without hyphens
+
+<Note>
+Notion integration is **limited** compared to other tools because Notion doesn't have built-in issue tracking. Best used with structured databases.
+</Note>
+
+### Environment Variables
+
+```bash
+export NOTION_API_KEY="secret_..."
+export NOTION_DATABASE_ID="your-database-id"
+```
+
+## Ticket Extraction
+
+DevDaily automatically extracts ticket IDs from:
+
+### Branch Names
+
+Common patterns:
+
+```bash
+# Standard formats
+feature/PROJ-123-description
+fix/PROJ-456-bugfix
+bugfix/PROJ-789
+
+# Prefixed formats
+user/PROJ-123-feature
+team/ENG-456-implementation
+
+# Just the ticket
+PROJ-123/description
+PROJ-123-feature-name
+
+# Numeric only (with ticketPrefix config)
+feature/123-description  # Becomes PROJ-123
+```
+
+### Commit Messages
+
+```bash
+# Reference in title
+git commit -m "PROJ-123: Add authentication"
+git commit -m "Fix #456: Resolve login bug"
+
+# Reference in body
+git commit -m "Add OAuth" -m "Implements PROJ-123"
+
+# Multiple tickets
+git commit -m "PROJ-123 PROJ-124: Refactor auth"
+```
+
+### Custom Patterns
+
+For non-standard formats, use a custom regex:
+
+```json .devdaily.json
+{
+  "projectManagement": {
+    "ticketPattern": "\\b(CUSTOM-\\d+)\\b"
+  }
+}
+```
+
+## Fetched Metadata
+
+DevDaily fetches the following ticket data:
+
+<ResponseField name="id" type="string">
+  Ticket ID (e.g., `PROJ-123`, `#456`, `ENG-789`)
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  Ticket title/summary
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Full ticket description
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current status (e.g., `In Progress`, `Done`, `open`)
+</ResponseField>
+
+<ResponseField name="type" type="enum">
+  Issue type: `bug`, `feature`, `task`, `story`, `epic`, or `other`
+</ResponseField>
+
+<ResponseField name="priority" type="enum">
+  Priority level: `low`, `medium`, `high`, or `critical`
+</ResponseField>
+
+<ResponseField name="assignee" type="string">
+  Assigned person's name
+</ResponseField>
+
+<ResponseField name="labels" type="string[]">
+  Associated labels/tags
+</ResponseField>
+
+<ResponseField name="url" type="string">
+  Direct link to ticket
+</ResponseField>
+
+## Testing Connection
+
+Verify your PM integration is working:
+
+```bash
+# Test connection and auth
+devdaily connect --test
+
+# Output:
+# ✓ GitHub: Authenticated as username (repo: owner/repo)
+# ✓ Connection successful (120ms)
+
+# Fetch a specific ticket
+devdaily standup --ticket PROJ-123 --debug
+```
+
+## Usage in Commands
+
+### Standup
+
+Tickets are automatically included in standups:
+
+```bash
+devdaily standup
+
+# Output includes ticket metadata:
+# Yesterday:
+# - [PROJ-123] Implement OAuth2 authentication
+#   → Added Google OAuth provider
+#   → Updated user model
+#   📎 https://yourcompany.atlassian.net/browse/PROJ-123
+```
+
+### PR Descriptions
+
+Ticket data enriches PR descriptions:
+
+```bash
+devdaily pr --create
+
+# PR body includes:
+# ## Ticket
+# **Ticket No:** PROJ-123
+# **Ticket link:** https://yourcompany.atlassian.net/browse/PROJ-123
+# **Summary:** Implement OAuth2 authentication
+```
+
+### Weekly Summaries
+
+```bash
+devdaily week
+
+# Groups work by ticket:
+# This Week:
+# 
+# PROJ-123: Implement OAuth2 authentication
+# - Added Google OAuth provider
+# - Updated user model
+# - Fixed token refresh bug
+```
+
+## Disabling PM Integration
+
+To disable project management integration:
+
+```json .devdaily.json
+{
+  "projectManagement": {
+    "tool": "none"
+  }
+}
+```
+
+DevDaily will still extract ticket IDs from branch names but won't fetch metadata.
+
+## Troubleshooting
+
+### Authentication Errors
+
+<AccordionGroup>
+  <Accordion title="Jira: 401 Unauthorized">
+    - Verify email and API token in secrets.json
+    - Check token hasn't expired
+    - Ensure baseUrl is correct (no trailing slash)
+    - Test: `curl -u email:token https://yourcompany.atlassian.net/rest/api/3/myself`
+  </Accordion>
+  
+  <Accordion title="Linear: Invalid API Key">
+    - Verify API key in secrets.json starts with `lin_api_`
+    - Regenerate at https://linear.app/settings/api
+    - Check key has required permissions
+  </Accordion>
+  
+  <Accordion title="GitHub: Not authenticated">
+    - Run `gh auth login`
+    - Verify: `gh auth status`
+    - Ensure gh CLI version >= 2.0
+  </Accordion>
+  
+  <Accordion title="Notion: 404 Not Found">
+    - Verify database ID is correct
+    - Check integration has access to database
+    - Re-share database with integration
+  </Accordion>
+</AccordionGroup>
+
+### Tickets Not Found
+
+1. **Check ticket ID format**:
+   ```bash
+   devdaily standup --debug
+   # Shows extracted ticket IDs
+   ```
+
+2. **Verify ticketPrefix**:
+   ```json
+   {
+     "projectManagement": {
+       "ticketPrefix": "PROJ"  // Must match your tickets
+     }
+   }
+   ```
+
+3. **Test extraction manually**:
+   ```bash
+   echo "feature/PROJ-123-auth" | grep -oE '[A-Z]+-[0-9]+'
+   ```
+
+### Rate Limiting
+
+API rate limits:
+- **Jira**: 10 req/sec per user
+- **Linear**: 2000 req/hour
+- **GitHub**: 5000 req/hour (authenticated)
+
+DevDaily caches ticket data during command execution to minimize API calls.
+
+## Best Practices
+
+<Steps>
+  <Step title="Use consistent branch naming">
+    Always include ticket ID in branch names:
+    ```bash
+    git checkout -b feature/PROJ-123-description
+    ```
+  </Step>
+  
+  <Step title="Reference tickets in commits">
+    ```bash
+    git commit -m "PROJ-123: Add OAuth provider"
+    ```
+  </Step>
+  
+  <Step title="Configure ticketPrefix">
+    Set your team's standard prefix:
+    ```json
+    { "projectManagement": { "ticketPrefix": "PROJ" } }
+    ```
+  </Step>
+  
+  <Step title="Test before relying on automation">
+    ```bash
+    devdaily connect --test
+    devdaily standup --ticket PROJ-123 --debug
+    ```
+  </Step>
+</Steps>
+
+## Related Configuration
+
+<CardGroup cols={2}>
+  <Card title="Configuration Overview" icon="gear" href="/configuration/overview">
+    Learn about all configuration options
+  </Card>
+  
+  <Card title="PR Templates" icon="code-pull-request" href="/configuration/pr-templates">
+    Customize how ticket data appears in PRs
+  </Card>
+</CardGroup>

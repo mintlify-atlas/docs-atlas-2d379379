@@ -1,0 +1,217 @@
+---
+title: Development Setup
+description: Set up your local development environment for DevDaily AI
+---
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+<CardGroup cols={2}>
+  <Card title="Node.js" icon="node-js">
+    Version 18.0.0 or higher
+  </Card>
+  <Card title="npm" icon="npm">
+    Version 9 or higher
+  </Card>
+  <Card title="Git" icon="git">
+    For version control
+  </Card>
+  <Card title="GitHub CLI" icon="github">
+    For testing PR creation features
+  </Card>
+</CardGroup>
+
+### Optional Dependencies
+
+<Info>
+  **GitHub Copilot CLI** is required for testing AI generation features. Install it with:
+  ```bash
+  gh extension install github/gh-copilot
+  ```
+</Info>
+
+## Initial Setup
+
+### 1. Clone the Repository
+
+First, fork the repository on GitHub, then clone your fork:
+
+```bash
+git clone https://github.com/<your-username>/devdaily.git
+cd devdaily
+```
+
+### 2. Install Dependencies
+
+Install all project dependencies:
+
+```bash
+npm install
+```
+
+### 3. Verify Installation
+
+Run the quality checks to ensure everything is set up correctly:
+
+<CodeGroup>
+```bash TypeScript
+npm run typecheck
+```
+
+```bash Linting
+npm run lint
+```
+
+```bash Tests
+npm test
+```
+
+```bash Build
+npm run build
+```
+</CodeGroup>
+
+<Check>
+  If all commands complete without errors, your development environment is ready!
+</Check>
+
+## Running Locally
+
+### Watch Mode
+
+For active development, use watch mode to automatically rebuild on file changes:
+
+```bash
+npm run dev
+```
+
+This runs `tsx watch src/index.ts` and rebuilds whenever you save changes to TypeScript files.
+
+### Link the CLI Globally
+
+To test the CLI in any git repository, link it globally:
+
+```bash
+npm link
+```
+
+Now you can run `devdaily` commands from any directory:
+
+```bash
+# Navigate to any git repo
+cd /path/to/your/project
+
+# Test commands
+devdaily standup --days 1 --no-copy
+devdaily pr --debug
+devdaily doctor
+```
+
+<Tip>
+  Use `--no-copy` to prevent clipboard writes during testing, and `--debug` to see full AI prompts.
+</Tip>
+
+### Unlinking
+
+When you're done testing, unlink the global command:
+
+```bash
+npm unlink -g devdaily-ai
+```
+
+## Development Scripts
+
+Here are the most commonly used npm scripts:
+
+| Script | Command | Description |
+|--------|---------|-------------|
+| `dev` | `npm run dev` | Watch mode - auto-rebuild on changes |
+| `build` | `npm run build` | Production build with tsup |
+| `typecheck` | `npm run typecheck` | TypeScript type checking |
+| `lint` | `npm run lint` | Run ESLint |
+| `lint:fix` | `npm run lint:fix` | Auto-fix ESLint issues |
+| `format` | `npm run format` | Format code with Prettier |
+| `format:check` | `npm run format:check` | Check code formatting |
+| `test` | `npm test` | Run all tests with Vitest |
+| `test:watch` | `npm run test:watch` | Tests in watch mode |
+| `test:coverage` | `npm run test:coverage` | Tests with coverage report |
+
+## IDE Setup
+
+### VS Code
+
+Recommended extensions:
+
+- **ESLint** - For linting
+- **Prettier** - For code formatting
+- **TypeScript Vue Plugin** - Enhanced TypeScript support
+
+### Auto-formatting on Save
+
+The project uses **Husky** and **lint-staged** to automatically format files on commit:
+
+```json
+"lint-staged": {
+  "*.ts": [
+    "eslint --fix",
+    "prettier --write"
+  ],
+  "*.{json,md}": [
+    "prettier --write"
+  ]
+}
+```
+
+<Warning>
+  Make sure to commit frequently to trigger the pre-commit hooks that maintain code quality.
+</Warning>
+
+## Troubleshooting
+
+### Node Version Issues
+
+If you encounter Node.js version errors:
+
+```bash
+node --version  # Should be >= 18.0.0
+```
+
+Consider using [nvm](https://github.com/nvm-sh/nvm) to manage Node.js versions:
+
+```bash
+nvm install 18
+nvm use 18
+```
+
+### Build Errors
+
+If the build fails, try cleaning and reinstalling:
+
+```bash
+rm -rf node_modules dist
+npm install
+npm run build
+```
+
+### Test Failures
+
+Tests should not require network access, git repos, or API keys. If tests fail:
+
+1. Ensure all dependencies are installed
+2. Check that you're using Node.js 18+
+3. Clear the Vitest cache: `npx vitest run --clearCache`
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Architecture" icon="sitemap" href="/development/architecture">
+    Learn about the project structure and tech stack
+  </Card>
+  <Card title="Testing" icon="flask" href="/development/testing">
+    Write and run tests for your changes
+  </Card>
+  <Card title="Contributing" icon="code-pull-request" href="/development/contributing">
+    Follow the contribution guidelines
+  </Card>
+</CardGroup>

@@ -1,0 +1,230 @@
+---
+title: "devdaily doctor"
+description: "Check system setup and diagnose issues"
+---
+
+## Description
+
+Runs diagnostic checks to verify your DevDaily setup. Checks for required dependencies, authentication, and provides troubleshooting guidance.
+
+## Usage
+
+```bash
+devdaily doctor [options]
+```
+
+## Options
+
+<ParamField path="--fix" type="boolean">
+  Attempt to fix issues automatically (installs missing tools, runs auth)
+</ParamField>
+
+## Examples
+
+### Run diagnostics
+
+```bash
+devdaily doctor
+```
+
+### Auto-fix issues
+
+```bash
+devdaily doctor --fix
+```
+
+## Checks Performed
+
+### Node.js
+
+- **Check**: Node.js version >= 18
+- **Status**: Version number
+- **Fix**: Install from https://nodejs.org
+
+### Git
+
+- **Check**: Git CLI installed
+- **Status**: Version number
+- **Fix**: Install from https://git-scm.com
+
+### GitHub CLI
+
+- **Check**: `gh` command available
+- **Status**: Version number
+- **Fix**: Install from https://cli.github.com
+
+### GitHub Authentication
+
+- **Check**: `gh auth status` succeeds
+- **Status**: Authenticated or not
+- **Fix**: Run `gh auth login`
+
+### Copilot CLI
+
+- **Check**: Copilot CLI or `gh copilot` extension
+- **Status**: Version or type (new/legacy)
+- **Fix**: Run `brew install copilot-cli`
+
+## Status Icons
+
+- ✓ **OK** - Check passed
+- ⚠ **Warning** - Non-critical issue
+- ✗ **Error** - Critical issue
+
+## Example Output
+
+```
+System Check
+
+Prerequisites
+
+  ✓ Node.js        v20.11.0
+  ✓ Git            git version 2.39.2
+  ✓ GitHub CLI     gh version 2.40.0
+  ✓ GitHub Auth    Authenticated
+  ✗ Copilot CLI    Not found
+      Fix: brew install copilot-cli
+
+1 issue(s) found
+
+Run `devdaily doctor --fix` to attempt automatic fixes
+```
+
+## Auto-Fix
+
+With `--fix`, the doctor will attempt to:
+
+### GitHub Authentication
+
+Runs `gh auth login` interactively:
+
+```bash
+devdaily doctor --fix
+```
+
+You'll be prompted to:
+
+1. Choose authentication method (browser, token)
+2. Select account
+3. Grant permissions
+
+### Copilot CLI Installation
+
+Attempts to install via Homebrew:
+
+```bash
+brew install copilot-cli
+```
+
+Requires Homebrew on macOS/Linux.
+
+## Quick Setup Guide
+
+If issues are found, the doctor shows a quick setup guide:
+
+```
+Quick Setup Guide
+
+  1. Install GitHub CLI: brew install gh
+  2. Authenticate: gh auth login
+  3. Install Copilot CLI: brew install copilot-cli
+  4. Set up DevDaily: devdaily init
+```
+
+## Common Issues
+
+### Node.js Version Too Old
+
+**Issue**: Node.js < 18
+
+**Fix**: Upgrade Node.js
+
+```bash
+# macOS (Homebrew)
+brew install node
+
+# Or use nvm
+nvm install 20
+nvm use 20
+```
+
+### GitHub CLI Not Found
+
+**Issue**: `gh` command not available
+
+**Fix**: Install GitHub CLI
+
+```bash
+# macOS
+brew install gh
+
+# Linux (Debian/Ubuntu)
+sudo apt install gh
+
+# Windows
+winget install GitHub.cli
+```
+
+### Not Authenticated
+
+**Issue**: `gh auth status` fails
+
+**Fix**: Authenticate
+
+```bash
+gh auth login
+```
+
+Choose:
+
+1. GitHub.com or Enterprise
+2. HTTPS or SSH
+3. Authenticate via browser or token
+
+### Copilot CLI Not Found
+
+**Issue**: Neither `copilot` nor `gh copilot` found
+
+**Fix**: Install Copilot CLI
+
+```bash
+# New Copilot CLI (recommended)
+brew install copilot-cli
+
+# Or legacy gh extension
+gh extension install github/gh-copilot
+```
+
+### Legacy Copilot Extension
+
+**Issue**: Using `gh copilot` instead of standalone `copilot`
+
+**Status**: Warning (not error)
+
+**Fix**: Upgrade to new CLI
+
+```bash
+brew install copilot-cli
+```
+
+## Requirements
+
+- **Node.js** >= 18 (required)
+- **Git** (required)
+- **GitHub CLI** (required for PR creation, GitHub Issues)
+- **Copilot CLI** (required for AI generation)
+
+## Exit Codes
+
+- `0` - All checks passed
+- `1` - One or more errors found
+
+## After Fixing Issues
+
+Once all checks pass, run the setup:
+
+```bash
+devdaily init
+```
+
+This will configure aliases, completions, and integrations.

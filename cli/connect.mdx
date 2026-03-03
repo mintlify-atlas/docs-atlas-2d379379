@@ -1,0 +1,315 @@
+---
+title: "devdaily connect"
+description: "Test and configure PM tool connections (Jira, Linear, GitHub)"
+---
+
+## Description
+
+Interactive tool for testing and configuring project management integrations. Verifies credentials, tests API connections, and helps troubleshoot PM tool setup.
+
+## Usage
+
+```bash
+devdaily connect [options]
+```
+
+## Options
+
+<ParamField path="--tool <tool>" type="string">
+  PM tool to test: `jira`, `linear`, or `github`
+</ParamField>
+
+<ParamField path="--test" type="boolean">
+  Run connection test only (non-interactive)
+</ParamField>
+
+<ParamField path="--setup" type="boolean">
+  Run interactive setup for the selected tool
+</ParamField>
+
+<ParamField path="--ticket <id>" type="string">
+  Fetch a specific ticket to verify connection
+</ParamField>
+
+<ParamField path="--status" type="boolean">
+  Show current credential status only
+</ParamField>
+
+## Examples
+
+### Interactive connection setup
+
+```bash
+devdaily connect
+```
+
+### Test Jira connection
+
+```bash
+devdaily connect --tool jira --test
+```
+
+### Setup Linear
+
+```bash
+devdaily connect --tool linear --setup
+```
+
+### Verify with a specific ticket
+
+```bash
+devdaily connect --tool jira --test --ticket PROJ-123
+```
+
+### Show credential status
+
+```bash
+devdaily connect --status
+```
+
+## Supported PM Tools
+
+### GitHub Issues
+
+- Uses `gh` CLI for authentication
+- No API tokens required
+- Automatic repo detection
+
+```bash
+devdaily connect --tool github
+```
+
+### Jira
+
+- REST API integration
+- Requires: base URL, email, API token
+- Supports project keys and custom ticket prefixes
+
+```bash
+devdaily connect --tool jira --setup
+```
+
+**Required credentials**:
+
+- Jira base URL (e.g., `https://company.atlassian.net`)
+- Your email
+- API token (from https://id.atlassian.com/manage-profile/security/api-tokens)
+
+### Linear
+
+- GraphQL API integration
+- Requires: API key
+- Supports team keys
+
+```bash
+devdaily connect --tool linear --setup
+```
+
+**Required credentials**:
+
+- API key (from Linear Settings → API → Personal API keys)
+- Optional: team key
+
+## Interactive Flow
+
+When running `devdaily connect` without options:
+
+1. **Select PM tool** - Choose from GitHub, Jira, Linear
+2. **Check credentials** - Shows what's configured
+3. **Setup if needed** - Prompts for missing credentials
+4. **Test connection** - Verifies API access
+5. **Test extraction** - Shows ticket ID pattern matching
+6. **Fetch sample ticket** - Optional live verification
+
+## Credential Status
+
+Shows configured credentials and their sources:
+
+```
+Credential Status
+
+  ✓ Base URL        https://company.atlassian.net
+  ✓ Email           you@company.com
+  ✓ API Token       abc1••••xyz9
+  ✗ Project Key     not set
+      Set via: .devdaily.json → projectManagement.jira.projectKey
+```
+
+## Connection Test
+
+Tests the API connection and shows:
+
+- Success or failure status
+- Response time
+- Error hints if failed
+
+```
+Connection Test
+
+  ✓ Successfully connected to Jira
+    Response time: 342ms
+```
+
+## Ticket Extraction Test
+
+Shows how DevDaily will extract ticket IDs from:
+
+- Branch names
+- Commit messages
+- Multiple tickets
+
+```
+Ticket Pattern Matching
+
+  Tool:     jira
+  Prefix:   PROJ
+
+  ✓ Branch name     "feature/PROJ-123-add-login"
+    → Extracted: PROJ-123
+  
+  ✓ Commit msg      "fix: resolve PROJ-456 validation bug"
+    → Extracted: PROJ-456
+  
+  ✓ Multi-ticket    "chore: update deps, refs PROJ-10 PROJ-11"
+    → Extracted: PROJ-10, PROJ-11
+```
+
+## Live Ticket Test
+
+Fetches a real ticket to verify:
+
+- API access
+- Permissions
+- Data format
+
+```
+Live Ticket Test
+
+  ✓ Ticket found!
+
+  ID:          PROJ-123
+  Title:       Add OAuth authentication
+  Status:      In Progress
+  Type:        Story
+  Priority:    High
+  Assignee:    john@company.com
+  URL:         https://company.atlassian.net/browse/PROJ-123
+```
+
+## Setup Flow
+
+### Jira Setup
+
+```bash
+devdaily connect --tool jira --setup
+```
+
+Prompts for:
+
+1. Jira base URL
+2. Your email
+3. API token
+4. Project key (optional)
+5. Ticket prefix (optional)
+
+Saves to `.devdaily.secrets.json` (auto-added to `.gitignore`).
+
+### Linear Setup
+
+```bash
+devdaily connect --tool linear --setup
+```
+
+Prompts for:
+
+1. API key
+2. Team key (optional)
+3. Ticket prefix (optional)
+
+Saves to `.devdaily.secrets.json`.
+
+### GitHub Setup
+
+```bash
+devdaily connect --tool github --setup
+```
+
+No credentials needed (uses `gh` CLI).
+
+Optionally prompts for:
+
+1. Ticket prefix (for extraction)
+
+## Credential Storage
+
+Credentials are stored in `.devdaily.secrets.json`:
+
+```json
+{
+  "jira": {
+    "baseUrl": "https://company.atlassian.net",
+    "email": "you@company.com",
+    "apiToken": "..."
+  },
+  "linear": {
+    "apiKey": "..."
+  }
+}
+```
+
+This file is automatically added to `.gitignore`.
+
+## Environment Variables
+
+Alternatively, use environment variables:
+
+```bash
+# Jira
+export JIRA_BASE_URL="https://company.atlassian.net"
+export JIRA_EMAIL="you@company.com"
+export JIRA_API_TOKEN="..."
+
+# Linear
+export LINEAR_API_KEY="..."
+```
+
+## Troubleshooting
+
+### Connection Failed
+
+**Jira**:
+
+- Verify base URL (no trailing slash)
+- Check email is correct
+- Regenerate API token
+- Verify you have Jira access
+
+**Linear**:
+
+- Verify API key is valid
+- Check key has required scopes (issues:read)
+- Ensure you're on the right workspace
+
+**GitHub**:
+
+- Run `gh auth login`
+- Verify you have repo access
+
+### Ticket Not Found
+
+- Check ticket ID is correct
+- Verify you have access to the ticket
+- Ensure ticket exists in the system
+- For Jira: verify project key matches
+
+### Pattern Extraction Issues
+
+- Set correct `ticketPrefix` in config
+- Match your team's ticket ID format
+- Test with actual branch/commit names
+
+## Requirements
+
+- Configuration file (`.devdaily.json`)
+- PM tool access (API credentials or `gh` CLI)
+- Internet connection for API calls

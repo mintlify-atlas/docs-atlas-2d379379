@@ -1,0 +1,423 @@
+---
+title: Configuration Overview
+description: Learn how to configure DevDaily AI with .devdaily.json, including file locations, JSON Schema support, and configuration options.
+---
+
+DevDaily uses a JSON configuration file to customize behavior, appearance, and integrations. Configuration supports both local (per-project) and global (user-wide) settings with JSON Schema support for IDE autocomplete.
+
+## Configuration File Locations
+
+DevDaily searches for configuration files in the following order:
+
+| Scope | Path | Purpose |
+|-------|------|----------|
+| Local (per-project) | `.devdaily.json` | Project-specific settings |
+| Global | `~/.config/devdaily/config.json` | User-wide defaults |
+| Secrets | `~/.config/devdaily/secrets.json` or `.devdaily.secrets.json` | API tokens and webhook URLs |
+
+<Note>
+Local configuration overrides global configuration. Settings are merged, with local values taking precedence.
+</Note>
+
+## JSON Schema Support
+
+Enable autocomplete and validation in your IDE by adding the `$schema` field:
+
+```json .devdaily.json
+{
+  "$schema": "https://raw.githubusercontent.com/hempun10/devdaily/main/schemas/devdaily.schema.json",
+  "version": 1
+}
+```
+
+This provides:
+- IntelliSense/autocomplete in VS Code, JetBrains IDEs, and other editors
+- Inline documentation for all configuration options
+- Validation warnings for invalid values
+
+## Example Configuration
+
+Here's a complete example `.devdaily.json` file:
+
+```json .devdaily.json
+{
+  "$schema": "https://raw.githubusercontent.com/hempun10/devdaily/main/schemas/devdaily.schema.json",
+  "version": 1,
+  
+  "theme": {
+    "primary": "blue",
+    "success": "green",
+    "warning": "yellow",
+    "error": "red",
+    "accent": "cyan",
+    "muted": "gray"
+  },
+  
+  "ascii": true,
+  "animations": true,
+  "compactMode": false,
+  
+  "aliases": {
+    "standup": ["s", "su", "daily"],
+    "pr": ["p", "pull"],
+    "week": ["w", "weekly"],
+    "dash": ["d", "dashboard"]
+  },
+  
+  "output": {
+    "format": "markdown",
+    "copyToClipboard": true,
+    "showStats": true,
+    "verbose": false
+  },
+  
+  "git": {
+    "defaultBranch": "main",
+    "excludeAuthors": [],
+    "excludePatterns": ["merge commit", "Merge branch"]
+  },
+  
+  "projects": [],
+  
+  "shortcuts": {
+    "quit": "q",
+    "help": "?",
+    "refresh": "r",
+    "copy": "c",
+    "create": "enter",
+    "back": "esc",
+    "nextProject": "tab",
+    "prevProject": "shift+tab"
+  },
+  
+  "projectManagement": {
+    "tool": "github",
+    "jira": {
+      "useApiToken": true
+    },
+    "linear": {
+      "useApi": true
+    },
+    "notion": {
+      "useApi": true
+    }
+  },
+  
+  "notifications": {
+    "slack": {
+      "enabled": false
+    },
+    "discord": {
+      "enabled": false
+    },
+    "standupTimezone": "America/New_York"
+  },
+  
+  "journal": {
+    "autoSnapshot": true,
+    "gitHooks": false,
+    "quiet": true
+  },
+  
+  "copilot": {
+    "timeout": 30000,
+    "retries": 2
+  },
+  
+  "standup": {
+    "defaultDays": 1,
+    "includeWIP": false,
+    "sections": ["completed", "in-progress", "blockers"],
+    "groupBy": "none",
+    "includeTicketLinks": true,
+    "scheduleDays": ["monday", "tuesday", "wednesday", "thursday", "friday"]
+  },
+  
+  "pr": {
+    "defaultBase": "main",
+    "autoLabels": true,
+    "defaultLabels": [],
+    "defaultReviewers": [],
+    "defaultAssignees": [],
+    "titleFormat": "conventional",
+    "includeTicketInTitle": true,
+    "includeDiff": true,
+    "maxDiffLines": 200
+  },
+  
+  "week": {
+    "startDay": "monday",
+    "includeWeekends": false
+  }
+}
+```
+
+## Configuration Categories
+
+### Display Settings
+
+<ParamField path="theme" type="object">
+  Color theme for terminal output
+  
+  <Expandable title="properties">
+    <ParamField path="primary" type="string" default="blue">Primary color for headings and highlights</ParamField>
+    <ParamField path="success" type="string" default="green">Color for success messages</ParamField>
+    <ParamField path="warning" type="string" default="yellow">Color for warnings</ParamField>
+    <ParamField path="error" type="string" default="red">Color for errors</ParamField>
+    <ParamField path="accent" type="string" default="cyan">Accent color for secondary elements</ParamField>
+    <ParamField path="muted" type="string" default="gray">Color for muted/dimmed text</ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="ascii" type="boolean" default="true">
+  Show ASCII art banners
+</ParamField>
+
+<ParamField path="animations" type="boolean" default="true">
+  Enable loading spinners and animations
+</ParamField>
+
+<ParamField path="compactMode" type="boolean" default="false">
+  Use compact output with less whitespace
+</ParamField>
+
+### Command Aliases
+
+<ParamField path="aliases" type="object">
+  Custom command aliases for faster access
+  
+  <Expandable title="properties">
+    <ParamField path="standup" type="string[]" default='["s", "su", "daily"]'>Aliases for standup command</ParamField>
+    <ParamField path="pr" type="string[]" default='["p", "pull"]'>Aliases for pr command</ParamField>
+    <ParamField path="week" type="string[]" default='["w", "weekly"]'>Aliases for week command</ParamField>
+    <ParamField path="dash" type="string[]" default='["d", "dashboard"]'>Aliases for dash command</ParamField>
+  </Expandable>
+</ParamField>
+
+### Output Preferences
+
+<ParamField path="output" type="object">
+  Output formatting and behavior
+  
+  <Expandable title="properties">
+    <ParamField path="format" type="enum" default="markdown">
+      Default output format: `markdown`, `slack`, `plain`, or `json`
+    </ParamField>
+    <ParamField path="copyToClipboard" type="boolean" default="true">
+      Automatically copy output to clipboard
+    </ParamField>
+    <ParamField path="showStats" type="boolean" default="true">
+      Show statistics (commit count, file changes, etc.)
+    </ParamField>
+    <ParamField path="verbose" type="boolean" default="false">
+      Enable verbose logging
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Git Settings
+
+<ParamField path="git" type="object">
+  Git repository configuration
+  
+  <Expandable title="properties">
+    <ParamField path="defaultBranch" type="string" default="main">
+      Default branch name for comparisons
+    </ParamField>
+    <ParamField path="excludeAuthors" type="string[]" default="[]">
+      Authors to exclude from analysis
+    </ParamField>
+    <ParamField path="excludePatterns" type="string[]" default='["merge commit", "Merge branch"]'>
+      Commit message patterns to exclude
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Multi-Project Support
+
+<ParamField path="projects" type="array">
+  List of projects for cross-project summaries
+  
+  ```json
+  "projects": [
+    {
+      "name": "frontend",
+      "path": "/path/to/frontend",
+      "defaultBranch": "main",
+      "team": ["alice", "bob"]
+    },
+    {
+      "name": "backend",
+      "path": "/path/to/backend"
+    }
+  ]
+  ```
+</ParamField>
+
+<ParamField path="activeProject" type="string">
+  Currently active project name
+</ParamField>
+
+### Keyboard Shortcuts
+
+<ParamField path="shortcuts" type="object">
+  Keyboard shortcuts for interactive commands
+  
+  <Expandable title="properties">
+    <ParamField path="quit" type="string" default="q">Quit/exit</ParamField>
+    <ParamField path="help" type="string" default="?">Show help</ParamField>
+    <ParamField path="refresh" type="string" default="r">Refresh data</ParamField>
+    <ParamField path="copy" type="string" default="c">Copy to clipboard</ParamField>
+    <ParamField path="create" type="string" default="enter">Create/submit</ParamField>
+    <ParamField path="back" type="string" default="esc">Go back</ParamField>
+    <ParamField path="nextProject" type="string" default="tab">Next project</ParamField>
+    <ParamField path="prevProject" type="string" default="shift+tab">Previous project</ParamField>
+  </Expandable>
+</ParamField>
+
+### Journal / Auto-Snapshots
+
+<ParamField path="journal" type="object">
+  Work journal and auto-snapshot configuration. See [Git Hooks](/configuration/git-hooks) for details.
+  
+  <Expandable title="properties">
+    <ParamField path="autoSnapshot" type="boolean" default="true">
+      Automatically take snapshots when running commands
+    </ParamField>
+    <ParamField path="gitHooks" type="boolean" default="false">
+      Install git hooks for automatic snapshots
+    </ParamField>
+    <ParamField path="hooks.postCommit" type="boolean" default="true">
+      Enable post-commit hook
+    </ParamField>
+    <ParamField path="hooks.postCheckout" type="boolean" default="true">
+      Enable post-checkout hook
+    </ParamField>
+    <ParamField path="quiet" type="boolean" default="true">
+      Suppress snapshot side-effect messages
+    </ParamField>
+    <ParamField path="autoPromptDays" type="number" default="0">
+      Days before auto-pruning journal entries (0 = never)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### AI/Copilot Settings
+
+<ParamField path="copilot" type="object">
+  GitHub Copilot CLI configuration
+  
+  <Expandable title="properties">
+    <ParamField path="timeout" type="number" default="30000">
+      Request timeout in milliseconds
+    </ParamField>
+    <ParamField path="retries" type="number" default="2">
+      Number of retry attempts on failure
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Managing Configuration
+
+### View Current Configuration
+
+```bash
+devdaily config
+```
+
+### Edit Configuration
+
+```bash
+devdaily config --edit        # Opens in $EDITOR
+devdaily config --path        # Show config file path
+```
+
+### Reset to Defaults
+
+Delete the configuration file and run `devdaily init`:
+
+```bash
+rm .devdaily.json
+devdaily init
+```
+
+## Secrets Management
+
+Sensitive values like API tokens and webhook URLs should be stored in a separate secrets file:
+
+<CodeGroup>
+
+```json ~/.config/devdaily/secrets.json
+{
+  "jira": {
+    "email": "your@email.com",
+    "apiToken": "your-jira-api-token",
+    "baseUrl": "https://yourcompany.atlassian.net"
+  },
+  "linear": {
+    "apiKey": "lin_api_..."
+  },
+  "notion": {
+    "apiKey": "secret_...",
+    "databaseId": "..."
+  },
+  "slack": {
+    "webhookUrl": "https://hooks.slack.com/services/..."
+  },
+  "discord": {
+    "webhookUrl": "https://discord.com/api/webhooks/..."
+  }
+}
+```
+
+```json .devdaily.secrets.json (project-specific)
+{
+  "slack": {
+    "webhookUrl": "https://hooks.slack.com/services/..."
+  }
+}
+```
+
+</CodeGroup>
+
+<Warning>
+Never commit `.devdaily.secrets.json` to version control. DevDaily automatically adds it to `.gitignore` during `devdaily init`.
+</Warning>
+
+## Environment Variables
+
+Configuration values can also be set via environment variables:
+
+```bash
+# Project Management
+export JIRA_BASE_URL="https://yourcompany.atlassian.net"
+export JIRA_EMAIL="your@email.com"
+export JIRA_API_TOKEN="your-token"
+export LINEAR_API_KEY="lin_api_..."
+export NOTION_API_KEY="secret_..."
+export NOTION_DATABASE_ID="..."
+
+# Notifications
+export SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..."
+export DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..."
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Git Hooks" icon="git" href="/configuration/git-hooks">
+    Set up automatic snapshots with git hooks
+  </Card>
+  
+  <Card title="Project Management" icon="ticket" href="/configuration/project-management">
+    Integrate with GitHub, Jira, or Linear
+  </Card>
+  
+  <Card title="Notifications" icon="bell" href="/configuration/notifications">
+    Configure Slack and Discord webhooks
+  </Card>
+  
+  <Card title="PR Templates" icon="code-pull-request" href="/configuration/pr-templates">
+    Customize PR descriptions with templates
+  </Card>
+</CardGroup>

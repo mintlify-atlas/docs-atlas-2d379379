@@ -1,0 +1,645 @@
+---
+title: PR Templates and Custom Prompts
+description: Customize pull request descriptions with GitHub PR templates and custom AI prompt files for team-specific formatting and guidelines.
+---
+
+DevDaily supports both GitHub PR templates and custom AI prompt files to generate consistent, team-specific pull request descriptions.
+
+## Overview
+
+DevDaily uses two mechanisms to customize PR descriptions:
+
+1. **PR Templates**: GitHub-style markdown templates with sections and checklists
+2. **Prompt Files**: Custom guidelines that instruct the AI how to write descriptions
+
+These work together: the template provides structure, and the prompt file guides the AI's tone and content.
+
+## PR Template Detection
+
+DevDaily automatically searches for PR templates in your repository:
+
+```
+.github/PULL_REQUEST_TEMPLATE.md
+.github/pull_request_template.md
+.github/PULL_REQUEST_TEMPLATE/default.md
+docs/PULL_REQUEST_TEMPLATE.md
+PULL_REQUEST_TEMPLATE.md
+pull_request_template.md
+```
+
+The first template found is used to structure the PR description.
+
+### Example Template
+
+<CodeGroup>
+
+```markdown .github/PULL_REQUEST_TEMPLATE.md
+# Pull Request Title
+
+## What Changed
+
+<!-- Describe the changes in this PR -->
+
+## Why
+
+<!-- Business or technical reason for these changes -->
+
+## Type of Change
+
+- [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
+- [ ] ✨ New feature (non-breaking change which adds functionality)
+- [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] 📝 Documentation update
+- [ ] 🔧 Configuration change
+
+## Ticket
+
+**Ticket No:** 
+**Ticket link:** 
+
+## Impact
+
+<!-- What parts of the system does this affect? -->
+
+## How to Test
+
+1. <!-- Testing step 1 -->
+2. <!-- Testing step 2 -->
+
+## Breaking Changes
+
+<!-- List any breaking changes or "None" -->
+
+## Screenshots
+
+<!-- Add screenshots if applicable, or delete this section -->
+
+## Checklist
+
+- [ ] My code follows the project's style guidelines
+- [ ] I have performed a self-review of my code
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] I have made corresponding changes to the documentation
+- [ ] My changes generate no new warnings
+- [ ] I have added tests that prove my fix/feature works
+- [ ] New and existing unit tests pass locally with my changes
+```
+
+```markdown docs/PULL_REQUEST_TEMPLATE.md (Simple)
+## Description
+
+<!-- What does this PR do? -->
+
+## Testing
+
+<!-- How was this tested? -->
+
+## Checklist
+
+- [ ] Tests pass
+- [ ] Documentation updated
+- [ ] No breaking changes
+```
+
+</CodeGroup>
+
+## Template Sections
+
+DevDaily parses templates into sections based on `##` headings and automatically fills them:
+
+<ParamField path="description" type="section">
+  **Matches:** `Description`, `What Changed`, `What`, `Summary`
+  
+  **Filled with:** AI-generated summary of changes from commits and diff
+</ParamField>
+
+<ParamField path="type_of_change" type="section">
+  **Matches:** `Type of Change`, `Type`, `Change Type`
+  
+  **Filled with:** Detected change type with appropriate checklist item marked
+</ParamField>
+
+<ParamField path="ticket" type="section">
+  **Matches:** `Ticket`, `Jira Ticket`, `Issue`, `Related Issues`
+  
+  **Filled with:** Ticket ID(s) and links from branch name and commits
+</ParamField>
+
+<ParamField path="impact" type="section">
+  **Matches:** `Impact`, `Affected Areas`, `Scope`
+  
+  **Filled with:** Analysis of which system components are affected
+</ParamField>
+
+<ParamField path="testing" type="section">
+  **Matches:** `How to Test`, `Testing`, `Test Plan`
+  
+  **Filled with:** Step-by-step testing instructions
+</ParamField>
+
+<ParamField path="breaking_changes" type="section">
+  **Matches:** `Breaking Changes`, `Breaking`, `Migration`
+  
+  **Filled with:** List of breaking changes or "No breaking changes."
+</ParamField>
+
+<ParamField path="screenshots" type="section">
+  **Matches:** `Screenshots`, `Images`, `Visual Changes`
+  
+  **Filled with:** Placeholder text (screenshots must be added manually)
+</ParamField>
+
+<ParamField path="checklist" type="section">
+  **Matches:** `Checklist`, `Verification`, `Review Checklist`
+  
+  **Filled with:** Preserved as-is from template
+</ParamField>
+
+## Custom PR Prompt Files
+
+Prompt files instruct the AI **how** to write PR descriptions, ensuring consistency with your team's style.
+
+### Creating a Prompt File
+
+Create `.devdaily-pr-prompt.md` in your repository root:
+
+```markdown .devdaily-pr-prompt.md
+# PR Description Guidelines
+
+These guidelines tell DevDaily AI how to generate PR descriptions for your team.
+
+## Tone & Style
+
+- Write in present tense ("Add feature" not "Added feature")
+- Be concise — aim for clarity over verbosity
+- Use bullet points for lists of changes
+- Avoid jargon unless well-known in the team
+- No emojis in description body (section headers are fine)
+
+## Description Format
+
+- Start with a one-sentence summary of what the PR does
+- Follow with bullet points of specific changes
+- Group related changes together
+- Mention any architectural decisions or trade-offs
+
+## Ticket References
+
+- Always include ticket IDs (e.g., PROJ-123) when available
+- Link to the ticket URL
+- Explain how changes relate to acceptance criteria
+
+## Testing Instructions
+
+- Provide step-by-step instructions for reviewers
+- Include any required environment setup
+- Mention edge cases to verify
+- For bug fixes: expected vs actual behavior
+
+## Breaking Changes
+
+- Clearly call out any breaking changes
+- Explain migration steps if applicable
+- Tag breaking changes with ⚠️
+
+## What NOT to Include
+
+- Don't list every file changed (that's in the diff)
+- Don't repeat commit messages verbatim
+- Don't include implementation details obvious from code
+- Don't include TODOs — create follow-up tickets instead
+```
+
+### Search Order
+
+DevDaily searches for prompt files in this order:
+
+1. Path specified in config (`pr.promptFile`)
+2. `.devdaily-pr-prompt.md` (repo root)
+3. `.github/devdaily-pr-prompt.md`
+4. `.github/PR_DESCRIPTION_PROMPT.md`
+5. `docs/devdaily-pr-prompt.md`
+
+### Configuration
+
+```json .devdaily.json
+{
+  "pr": {
+    "promptFile": ".github/devdaily-pr-prompt.md",
+    "includeDiff": true,
+    "maxDiffLines": 200
+  }
+}
+```
+
+<ParamField path="pr.promptFile" type="string">
+  Path to custom prompt file (relative to repo root or absolute)
+</ParamField>
+
+<ParamField path="pr.includeDiff" type="boolean" default="true">
+  Include diff summary in AI prompt for richer context
+</ParamField>
+
+<ParamField path="pr.maxDiffLines" type="number" default="200">
+  Maximum diff lines to include in prompt (prevents token overflow)
+</ParamField>
+
+## PR Configuration Options
+
+All PR-related settings in `.devdaily.json`:
+
+```json .devdaily.json
+{
+  "pr": {
+    "defaultBase": "main",
+    "template": null,
+    "promptFile": ".devdaily-pr-prompt.md",
+    "autoLabels": true,
+    "defaultLabels": ["enhancement"],
+    "defaultReviewers": ["alice", "bob"],
+    "defaultAssignees": ["@me"],
+    "titleFormat": "conventional",
+    "includeTicketInTitle": true,
+    "includeDiff": true,
+    "maxDiffLines": 200
+  }
+}
+```
+
+<ParamField path="pr.defaultBase" type="string" default="main">
+  Default base branch for PRs
+</ParamField>
+
+<ParamField path="pr.template" type="string">
+  Path to custom PR template (overrides auto-detection)
+</ParamField>
+
+<ParamField path="pr.autoLabels" type="boolean" default="true">
+  Automatically suggest labels based on changes
+</ParamField>
+
+<ParamField path="pr.defaultLabels" type="string[]" default="[]">
+  Labels to apply to all PRs
+</ParamField>
+
+<ParamField path="pr.defaultReviewers" type="string[]" default="[]">
+  Default reviewers (GitHub usernames)
+</ParamField>
+
+<ParamField path="pr.defaultAssignees" type="string[]" default="[]">
+  Default assignees (`@me` = you, or GitHub usernames)
+</ParamField>
+
+<ParamField path="pr.titleFormat" type="enum" default="conventional">
+  PR title format:
+  - `conventional`: `feat: Add OAuth` (Conventional Commits)
+  - `ticket-first`: `PROJ-123: Add OAuth`
+  - `plain`: `Add OAuth`
+</ParamField>
+
+<ParamField path="pr.includeTicketInTitle" type="boolean" default="true">
+  Include ticket ID in PR title (when detected)
+</ParamField>
+
+## How Templates Are Filled
+
+When you run `devdaily pr`, here's what happens:
+
+<Steps>
+  <Step title="Detect template">
+    Search for PR template in standard locations
+  </Step>
+  
+  <Step title="Load prompt file">
+    Load custom prompt guidelines (if exists)
+  </Step>
+  
+  <Step title="Analyze changes">
+    - Get commits since base branch
+    - Generate diff summary
+    - Extract ticket IDs from branch/commits
+    - Fetch ticket metadata (if PM tool configured)
+  </Step>
+  
+  <Step title="Generate with AI">
+    Send context + prompt to GitHub Copilot CLI:
+    - Commits and file changes
+    - Diff summary (up to maxDiffLines)
+    - Ticket data
+    - Template structure
+    - Custom guidelines from prompt file
+  </Step>
+  
+  <Step title="Fill template">
+    Map AI output to template sections:
+    - Description → What Changed
+    - Type detection → Type of Change checkboxes
+    - Tickets → Ticket section with links
+    - Testing steps → How to Test
+  </Step>
+  
+  <Step title="Present to user">
+    Show filled template in interactive menu:
+    - Edit description
+    - Create PR
+    - Copy to clipboard
+  </Step>
+</Steps>
+
+## Type Detection
+
+DevDaily automatically detects PR type from:
+
+1. **Branch name prefix**:
+   - `feature/`, `feat/` → Feature
+   - `fix/`, `bugfix/` → Bug fix
+   - `hotfix/` → Hotfix
+   - `docs/` → Documentation
+   - `refactor/` → Refactoring
+   - `test/` → Testing
+   - `chore/` → Maintenance
+
+2. **Conventional commit types**:
+   - `feat:` → Feature
+   - `fix:` → Bug fix
+   - `docs:` → Documentation
+   - `refactor:` → Refactoring
+   - `test:` → Testing
+   - `chore:` → Maintenance
+
+3. **File changes**:
+   - Only `.md` files → Documentation
+   - Only test files → Testing
+   - Config files → Configuration
+
+The detected type determines which checkbox is marked in "Type of Change" sections.
+
+## Example: Complete Workflow
+
+### 1. Create Files
+
+<CodeGroup>
+
+```markdown .github/PULL_REQUEST_TEMPLATE.md
+## What Changed
+
+## Type of Change
+
+- [ ] 🐛 Bug fix
+- [ ] ✨ Feature
+- [ ] 📝 Docs
+
+## Ticket
+
+**Ticket No:** 
+**Ticket link:** 
+
+## Testing
+
+## Checklist
+
+- [ ] Tests pass
+- [ ] Docs updated
+```
+
+```markdown .devdaily-pr-prompt.md
+# Guidelines
+
+## Style
+- Use present tense
+- Be concise
+- Include ticket context
+
+## Testing
+- Provide step-by-step instructions
+- Include expected outcomes
+```
+
+```json .devdaily.json
+{
+  "pr": {
+    "defaultBase": "develop",
+    "titleFormat": "conventional",
+    "includeTicketInTitle": true,
+    "defaultReviewers": ["alice"],
+    "autoLabels": true
+  },
+  "projectManagement": {
+    "tool": "jira",
+    "ticketPrefix": "PROJ"
+  }
+}
+```
+
+</CodeGroup>
+
+### 2. Create Branch
+
+```bash
+git checkout -b feature/PROJ-123-oauth
+```
+
+### 3. Make Changes
+
+```bash
+# Implement OAuth
+git add src/auth/oauth.ts
+git commit -m "feat(auth): Add OAuth provider"
+
+git add src/auth/google.ts
+git commit -m "feat(auth): Add Google OAuth integration"
+
+git add tests/auth.test.ts
+git commit -m "test(auth): Add OAuth tests"
+```
+
+### 4. Generate PR
+
+```bash
+devdaily pr
+```
+
+### 5. Output
+
+**Title:**
+```
+feat(auth): PROJ-123 Add OAuth provider
+```
+
+**Body:**
+```markdown
+## What Changed
+
+Adds OAuth2 authentication support with Google as the first provider. This allows users to sign in using their Google accounts instead of email/password.
+
+Changes:
+- Implement OAuth2 base provider class
+- Add Google OAuth integration
+- Update user model to support OAuth accounts
+- Add comprehensive test coverage
+
+## Type of Change
+
+- [ ] 🐛 Bug fix
+- [x] ✨ Feature
+- [ ] 📝 Docs
+
+## Ticket
+
+**Ticket No:** PROJ-123
+**Ticket link:** https://yourcompany.atlassian.net/browse/PROJ-123
+
+## Testing
+
+1. Set up Google OAuth credentials in `.env`:
+   ```
+   GOOGLE_CLIENT_ID=your-client-id
+   GOOGLE_CLIENT_SECRET=your-client-secret
+   ```
+2. Start the dev server: `npm run dev`
+3. Navigate to `/login`
+4. Click "Sign in with Google"
+5. Verify redirect to Google consent screen
+6. After approval, verify redirect back to app
+7. Verify user is logged in with Google account details
+
+## Checklist
+
+- [x] Tests pass
+- [x] Docs updated
+```
+
+### 6. Create PR
+
+From the interactive menu:
+- Select "Create PR on GitHub"
+- DevDaily creates PR with:
+  - Generated title and body
+  - Label: `enhancement` (auto-detected)
+  - Reviewer: `alice` (from config)
+  - Assignee: `@me`
+
+## Generating Sample Files
+
+DevDaily can generate starter templates:
+
+```bash
+# Generate sample PR template
+devdaily init --pr-template
+# Creates .github/PULL_REQUEST_TEMPLATE.md
+
+# Generate sample prompt file
+devdaily init --pr-prompt
+# Creates .devdaily-pr-prompt.md
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Start with a simple template">
+    Don't over-engineer. Start with:
+    - Description
+    - Testing
+    - Checklist
+    
+    Add sections as needs evolve.
+  </Step>
+  
+  <Step title="Write clear prompt guidelines">
+    Be specific about:
+    - Tone (formal vs casual)
+    - Length (concise vs detailed)
+    - Required elements (tickets, testing, etc.)
+    - Forbidden elements (emojis, personal opinions)
+  </Step>
+  
+  <Step title="Use conventional commit types">
+    Consistent commit types (`feat:`, `fix:`, etc.) help DevDaily:
+    - Detect PR type accurately
+    - Generate better titles
+    - Suggest appropriate labels
+  </Step>
+  
+  <Step title="Review and refine">
+    After generating several PRs:
+    - Review quality of descriptions
+    - Update prompt file based on patterns
+    - Adjust template sections to match team needs
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### Template Not Detected
+
+1. Check file exists:
+   ```bash
+   ls -la .github/PULL_REQUEST_TEMPLATE.md
+   ```
+
+2. Verify file is readable:
+   ```bash
+   cat .github/PULL_REQUEST_TEMPLATE.md
+   ```
+
+3. Manually specify:
+   ```json
+   { "pr": { "template": ".github/PULL_REQUEST_TEMPLATE.md" } }
+   ```
+
+### Prompt File Not Applied
+
+1. Check file location:
+   ```bash
+   ls -la .devdaily-pr-prompt.md
+   ```
+
+2. Test with debug:
+   ```bash
+   devdaily pr --debug
+   # Shows: "Loaded PR prompt from: ..."
+   ```
+
+3. Verify syntax:
+   ```bash
+   # Must use ## headings for sections
+   grep "^##" .devdaily-pr-prompt.md
+   ```
+
+### Sections Not Filled Correctly
+
+1. **Check section names**: Must match expected patterns (case-insensitive)
+   ```markdown
+   ## Description  ✅
+   ## What Changed ✅
+   ## Changes      ❌ (not recognized)
+   ```
+
+2. **Verify markdown format**: Sections must use `##` (h2)
+   ```markdown
+   ## Testing     ✅
+   ### Testing    ❌ (h3, not h2)
+   # Testing      ❌ (h1, not h2)
+   ```
+
+3. **Check for typos**:
+   ```markdown
+   ## Descripion  ❌ (typo)
+   ## Description ✅
+   ```
+
+## Related Configuration
+
+<CardGroup cols={2}>
+  <Card title="Configuration Overview" icon="gear" href="/configuration/overview">
+    Learn about all configuration options
+  </Card>
+  
+  <Card title="Project Management" icon="ticket" href="/configuration/project-management">
+    Configure ticket integration for PRs
+  </Card>
+  
+  <Card title="PR Command" icon="code-pull-request" href="/cli/pr">
+    Learn how to create PRs with DevDaily
+  </Card>
+</CardGroup>

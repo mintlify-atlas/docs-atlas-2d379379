@@ -1,0 +1,207 @@
+---
+title: "devdaily config"
+description: "Manage DevDaily configuration settings"
+---
+
+## Description
+
+Manage DevDaily configuration settings interactively or via command-line options. Configure theme, defaults, output preferences, and more.
+
+## Usage
+
+```bash
+devdaily config [options]
+```
+
+## Options
+
+<ParamField path="-e, --edit" type="boolean">
+  Open config file in your default editor ($EDITOR or VS Code)
+</ParamField>
+
+<ParamField path="--reset" type="boolean">
+  Reset configuration to defaults (prompts for confirmation)
+</ParamField>
+
+<ParamField path="--path" type="boolean">
+  Show config file paths (global, local, active)
+</ParamField>
+
+<ParamField path="--show" type="boolean">
+  Show current configuration as JSON
+</ParamField>
+
+## Examples
+
+### Interactive configuration
+
+```bash
+devdaily config
+```
+
+### Edit in VS Code/editor
+
+```bash
+devdaily config --edit
+```
+
+### Show current config
+
+```bash
+devdaily config --show
+```
+
+### Show config paths
+
+```bash
+devdaily config --path
+```
+
+### Reset to defaults
+
+```bash
+devdaily config --reset
+```
+
+## Interactive Menu
+
+When running `devdaily config` without options, you can configure:
+
+### Theme & Appearance
+
+- **Primary color** - Accent color (blue, cyan, green, magenta, yellow, red)
+- **ASCII art** - Show logo on startup
+- **Compact mode** - Reduce spacing in output
+
+### Default Settings
+
+- **Default branch** - Base branch for PRs and diffs
+- **Standup days** - Default lookback period
+- **Week start** - Monday or Sunday
+
+### Output Preferences
+
+- **Format** - Default output format (markdown, slack, plain, json)
+- **Copy to clipboard** - Auto-copy generated content
+- **Show stats** - Display statistics bars
+
+## Configuration File
+
+### Location Priority
+
+1. Local: `.devdaily.json` (project root)
+2. Global: `~/.devdaily.json` (home directory)
+
+Local settings override global settings.
+
+### Sample Configuration
+
+```json
+{
+  "theme": {
+    "primary": "cyan"
+  },
+  "ascii": true,
+  "compactMode": false,
+  "pr": {
+    "defaultBase": "main",
+    "includeDiff": true,
+    "maxDiffLines": 200
+  },
+  "standup": {
+    "defaultDays": 1
+  },
+  "week": {
+    "startDay": "monday"
+  },
+  "output": {
+    "format": "markdown",
+    "copyToClipboard": true,
+    "showStats": true
+  },
+  "git": {
+    "defaultBranch": "main"
+  },
+  "projectManagement": {
+    "tool": "github",
+    "ticketPrefix": "PROJ"
+  }
+}
+```
+
+## Configuration Options
+
+### Theme
+
+- `theme.primary`: Accent color (string)
+- `ascii`: Show ASCII art (boolean)
+- `compactMode`: Reduce spacing (boolean)
+
+### PR Settings
+
+- `pr.defaultBase`: Base branch (string)
+- `pr.includeDiff`: Include code diff in AI prompt (boolean)
+- `pr.maxDiffLines`: Maximum diff lines (number)
+
+### Standup Settings
+
+- `standup.defaultDays`: Default lookback days (number)
+
+### Week Settings
+
+- `week.startDay`: Week start ("monday" | "sunday")
+
+### Output Settings
+
+- `output.format`: Default format ("markdown" | "slack" | "plain" | "json")
+- `output.copyToClipboard`: Auto-copy (boolean)
+- `output.showStats`: Show statistics (boolean)
+
+### Git Settings
+
+- `git.defaultBranch`: Default base branch (string)
+
+### Project Management
+
+- `projectManagement.tool`: PM tool ("github" | "jira" | "linear" | "notion" | "none")
+- `projectManagement.ticketPrefix`: Ticket prefix for extraction (string)
+
+## Editing Manually
+
+You can edit the config file directly:
+
+```bash
+# Open in VS Code
+code .devdaily.json
+
+# Open in vim
+vim .devdaily.json
+
+# Or use the config command
+devdaily config --edit
+```
+
+## Resetting Configuration
+
+Reset to defaults:
+
+```bash
+devdaily config --reset
+```
+
+This removes all customizations and restores factory defaults.
+
+## Environment Variables
+
+Some settings can be overridden with environment variables:
+
+- `DEVD_DEBUG=1` - Enable debug mode globally
+- `EDITOR=vim` - Set editor for `--edit`
+
+## Validation
+
+DevDaily validates configuration on load. Invalid settings are:
+
+- Logged as warnings
+- Replaced with defaults
+- Not applied

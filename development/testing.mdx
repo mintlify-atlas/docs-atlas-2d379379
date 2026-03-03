@@ -1,0 +1,475 @@
+---
+title: Testing
+description: Running tests, test coverage, and testing approach for DevDaily
+---
+
+## Running Tests
+
+DevDaily uses [Vitest](https://vitest.dev/) for fast, modern testing.
+
+<CodeGroup>
+```bash All tests
+npm test
+```
+
+```bash Specific file
+npx vitest run tests/notifications.test.ts
+```
+
+```bash Watch mode
+npm run test:watch
+```
+
+```bash Coverage report
+npm run test:coverage
+```
+</CodeGroup>
+
+<Info>
+  Tests run automatically in CI across Node.js versions 18, 20, and 22 on every pull request.
+</Info>
+
+## Test Structure
+
+All tests live in the `tests/` directory and mirror the source structure:
+
+```
+tests/
+├── auto-snapshot.test.ts       # 74 tests
+├── commitlint.test.ts          # 6 tests
+├── context-analyzer.test.ts    # 22 tests
+├── copilot.test.ts             # 38 tests
+├── git-analyzer.test.ts        # 15 tests
+├── notifications.test.ts       # 70 tests
+├── pr-creation.test.ts         # 123 tests
+├── pr-prompt.test.ts           # 26 tests
+├── pr-template.test.ts         # 25 tests
+├── project-management.test.ts  # 130 tests
+├── standup-context.test.ts     # 70 tests
+├── ui.test.ts                  # 2 tests
+└── work-journal.test.ts        # 123 tests
+```
+
+<Accordion title="Test Coverage by Module">
+  | Module | Tests | Description |
+  |--------|-------|-------------|
+  | `auto-snapshot` | 74 | Side-effect snapshots, hooks, config |
+  | `work-journal` | 123 | Persistent storage, search, aggregation |
+  | `project-management` | 130 | Jira, Linear, GitHub Issues integration |
+  | `standup-context` | 70 | Context building, formatting |
+  | `notifications` | 70 | Slack/Discord webhooks, output formatter |
+  | `pr-creation` | 123 | PR generation pipeline |
+  | `copilot` | 38 | AI prompt building |
+  | `pr-prompt` | 26 | Custom prompt file loading |
+  | `pr-template` | 25 | Template detection and parsing |
+  | `context-analyzer` | 22 | Work pattern analysis |
+  | `git-analyzer` | 15 | Git operations |
+  | `commitlint` | 6 | Conventional commit parsing |
+  | `ui` | 2 | UI rendering |
+  | **Total** | **724** | |
+</Accordion>
+
+## Writing Tests
+
+### Test Conventions
+
+<Steps>
+  <Step title="Place tests in tests/ directory">
+    Create files with `.test.ts` suffix
+  </Step>
+  <Step title="Use descriptive names">
+    `describe` and `it` blocks should clearly explain what's being tested
+  </Step>
+  <Step title="Mock external dependencies">
+    Tests must not require network access, git repos, or API keys
+  </Step>
+  <Step title="Test happy path and edge cases">
+    Cover both successful execution and error scenarios
+  </Step>
+</Steps>
+
+### Basic Test Example
+
+```typescript
+import { describe, it, expect, vi } from 'vitest';
+import { formatOutput } from '../src/utils/formatter.js';
+
+describe('formatOutput', () => {
+  describe('plain format', () => {
+    it('strips markdown header markers', () => {
+      // Arrange
+      const input = '## Completed\n\n- Task A';
+      
+      // Act
+      const result = formatOutput(input, 'plain');
+      
+      // Assert
+      expect(result.text).not.toContain('##');
+      expect(result.text).toContain('Completed:');
+    });
+
+    it('preserves the original markdown in .raw', () => {
+      const md = '## Title\n\n**Bold text**';
+      const result = formatOutput(md, 'plain');
+
+      expect(result.raw).toBe(md);
+    });
+  });
+});
+```
+
+<Tip>
+  Follow the **Arrange-Act-Assert** pattern for clear, readable tests.
+</Tip>
+
+## Mocking
+
+### Config Mocking
+
+Most tests mock the config module to avoid file system dependencies:
+
+```typescript
+import { vi, beforeEach } from 'vitest';
+
+const mockConfig = {
+  output: { 
+    format: 'markdown', 
+    copyToClipboard: true, 
+    showStats: true, 
+    verbose: false 
+  },
+  git: { 
+    defaultBranch: 'main', 
+    excludeAuthors: [], 
+    excludePatterns: [] 
+  },
+  standup: {
+    defaultDays: 1,
+    sections: ['completed', 'in-progress', 'blockers']
+  }
+};
+
+vi.mock('../src/config/index.js', () => ({
+  getConfig: () => mockConfig,
+  getSecrets: () => ({}),
+}));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+```
+
+### Network Request Mocking
+
+For webhook and API tests, stub the global `fetch`:
+
+```typescript
+import { vi, beforeEach, afterEach } from 'vitest';
+
+const fetchMock = vi.fn();
+
+beforeEach(() => {
+  vi.stubGlobal('fetch', fetchMock);
+  fetchMock.mockReset();
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+it('sends webhook to Slack', async () => {
+  fetchMock.mockResolvedValueOnce({
+    ok: true,
+    status: 200,
+  });
+
+  await sendNotification({ /* ... */ });
+
+  expect(fetchMock).toHaveBeenCalledWith(
+    expect.stringContaining('slack.com'),
+    expect.objectContaining({
+      method: 'POST',
+    })
+  );
+});
+```
+
+### Git Operations Mocking
+
+For tests involving git operations:
+
+```typescript
+import { vi } from 'vitest';
+import type { SimpleGit } from 'simple-git';
+
+const mockGit: Partial<SimpleGit> = {
+  log: vi.fn().mockResolvedValue({
+    all: [
+      {
+        hash: 'abc123',
+        message: 'feat: add new feature',
+        date: '2025-01-15',
+        author_name: 'Test User',
+      },
+    ],
+  }),
+  branch: vi.fn().mockResolvedValue({
+    current: 'feature/test',
+    all: ['main', 'feature/test'],
+  }),
+};
+
+vi.mock('simple-git', () => ({
+  simpleGit: () => mockGit,
+}));
+```
+
+## Testing Best Practices
+
+### DO ✓
+
+<AccordionGroup>
+  <Accordion title="Test both success and failure paths">
+    ```typescript
+    it('returns data when API call succeeds', async () => {
+      // Test happy path
+    });
+
+    it('throws error when API call fails', async () => {
+      // Test error handling
+    });
+    ```
+  </Accordion>
+
+  <Accordion title="Use descriptive test names">
+    ```typescript
+    // Good ✓
+    it('strips markdown headers when format is plain')
+    
+    // Bad ✗
+    it('works correctly')
+    ```
+  </Accordion>
+
+  <Accordion title="Mock external dependencies">
+    ```typescript
+    // Mock file system, network, and external APIs
+    vi.mock('fs/promises');
+    vi.stubGlobal('fetch', mockFetch);
+    ```
+  </Accordion>
+
+  <Accordion title="Clear mocks between tests">
+    ```typescript
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### DON'T ✗
+
+<Warning>
+  - Don't make real network requests
+  - Don't depend on file system state
+  - Don't rely on specific git repository state
+  - Don't use real API keys or credentials
+  - Don't write tests that depend on execution order
+</Warning>
+
+## Coverage Reports
+
+Generate an HTML coverage report:
+
+```bash
+npm run test:coverage
+```
+
+<Tabs>
+  <Tab title="macOS">
+    ```bash
+    open coverage/index.html
+    ```
+  </Tab>
+  <Tab title="Linux">
+    ```bash
+    xdg-open coverage/index.html
+    ```
+  </Tab>
+  <Tab title="Windows">
+    ```bash
+    start coverage/index.html
+    ```
+  </Tab>
+</Tabs>
+
+### Coverage Configuration
+
+Vitest is configured to generate coverage using v8:
+
+```typescript
+// vitest.config.ts
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'node',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/**',
+        'dist/**',
+        '**/*.test.ts',
+        '**/*.config.*',
+      ],
+    },
+  },
+});
+```
+
+<Info>
+  When adding new features, aim to maintain or improve test coverage. Every new module in `src/core/` should have a corresponding test file.
+</Info>
+
+## Quality Checklist
+
+Before submitting a pull request, ensure all checks pass:
+
+<Steps>
+  <Step title="TypeScript compilation">
+    ```bash
+    npm run typecheck
+    ```
+    Must complete with zero errors
+  </Step>
+  <Step title="Linting">
+    ```bash
+    npm run lint
+    ```
+    Must complete with zero errors
+  </Step>
+  <Step title="Formatting">
+    ```bash
+    npm run format:check
+    ```
+    All files must be properly formatted
+  </Step>
+  <Step title="Tests">
+    ```bash
+    npm test
+    ```
+    All tests must pass
+  </Step>
+  <Step title="Production build">
+    ```bash
+    npm run build
+    ```
+    Build must complete successfully
+  </Step>
+</Steps>
+
+<Check>
+  These same checks run automatically in CI on every pull request across Node.js 18, 20, and 22.
+</Check>
+
+## Manual Testing
+
+For changes affecting CLI behavior, manual smoke testing is recommended:
+
+### 1. Build and Link
+
+```bash
+npm run build
+npm link
+```
+
+### 2. Test in a Real Repository
+
+```bash
+# Navigate to any git repository
+cd /path/to/your/project
+
+# Test affected commands
+devdaily standup --days 1 --no-copy
+devdaily pr --debug --no-copy
+devdaily week --no-copy
+devdaily doctor
+```
+
+<Tip>
+  Use `--debug` to see the full prompt and context sent to Copilot CLI. Use `--no-copy` to prevent clipboard writes during testing.
+</Tip>
+
+### 3. Cleanup
+
+When done, unlink the global command:
+
+```bash
+npm unlink -g devdaily-ai
+```
+
+## Debugging Tests
+
+### Run a Single Test File
+
+```bash
+npx vitest run tests/notifications.test.ts
+```
+
+### Run Tests Matching a Pattern
+
+```bash
+npx vitest run -t "webhook"
+```
+
+### Enable Verbose Output
+
+```bash
+npx vitest run --reporter=verbose
+```
+
+### Clear Vitest Cache
+
+If tests behave unexpectedly:
+
+```bash
+npx vitest run --clearCache
+```
+
+## Continuous Integration
+
+Tests run automatically on every pull request via GitHub Actions:
+
+```yaml
+# .github/workflows/ci.yml
+strategy:
+  matrix:
+    node-version: [18, 20, 22]
+    os: [ubuntu-latest, macos-latest]
+
+steps:
+  - run: npm run typecheck
+  - run: npm run lint
+  - run: npm run format:check
+  - run: npm test
+  - run: npm run build
+```
+
+<Info>
+  All checks must pass before a PR can be merged.
+</Info>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Setup Guide" icon="wrench" href="/development/setup">
+    Set up your development environment
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/development/architecture">
+    Understand the project structure
+  </Card>
+  <Card title="Contributing" icon="code-pull-request" href="/development/contributing">
+    Submit your first contribution
+  </Card>
+</CardGroup>
