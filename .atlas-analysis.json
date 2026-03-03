@@ -1,0 +1,120 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "DevDaily AI",
+  "projectDescription": "AI-powered developer memory that auto-generates standup notes, PR descriptions, and work summaries from git history",
+  "theme": "palm",
+  "primaryColor": "#3B82F6",
+  "lightColor": "#60A5FA",
+  "darkColor": "#2563EB",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/standup",
+              "features/pr-descriptions",
+              "features/weekly-summaries",
+              "features/context-recovery",
+              "features/work-search"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/overview",
+              "configuration/git-hooks",
+              "configuration/project-management",
+              "configuration/notifications",
+              "configuration/pr-templates"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/auto-snapshots",
+              "advanced/work-journal",
+              "advanced/custom-prompts",
+              "advanced/privacy"
+            ]
+          },
+          {
+            "group": "Troubleshooting",
+            "pages": [
+              "troubleshooting/common-issues",
+              "troubleshooting/diagnostics"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "CLI Reference",
+        "groups": [
+          {
+            "group": "Commands",
+            "pages": [
+              "cli/standup",
+              "cli/pr",
+              "cli/week",
+              "cli/context",
+              "cli/recall",
+              "cli/snapshot",
+              "cli/init",
+              "cli/config",
+              "cli/doctor",
+              "cli/connect",
+              "cli/dash"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Development",
+        "groups": [
+          {
+            "group": "Contributing",
+            "pages": [
+              "development/setup",
+              "development/architecture",
+              "development/testing",
+              "development/contributing"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "AI-powered standup note generation from git commits",
+    "Automatic PR description creation with template support",
+    "Weekly work summaries with cross-project aggregation",
+    "Context recovery after interruptions",
+    "Local work journal with persistent memory",
+    "Integration with GitHub, Jira, and Linear",
+    "Slack and Discord notifications",
+    "Git hooks for automatic snapshot capture"
+  ],
+  "publicApiSurface": [
+    "devdaily standup - Generate daily standup notes",
+    "devdaily pr - Generate PR descriptions",
+    "devdaily week - Generate weekly summaries",
+    "devdaily context - Recover work context",
+    "devdaily recall - Search work history",
+    "devdaily snapshot - Capture work snapshots",
+    "devdaily init - Setup wizard",
+    "devdaily config - Configuration management",
+    "devdaily doctor - System diagnostics",
+    "devdaily connect - PM tool integration",
+    "devdaily dash - Interactive dashboard"
+  ]
+}
